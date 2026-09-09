@@ -96,4 +96,33 @@ async function findAuthByEmail(email) {
   return { member: toMember(row), passwordHash: row.password_hash };
 }
 
-module.exports = { insertMember, findMemberById, findAuthByEmail };
+/**
+ * 회원 정보(이름·연락처)를 수정한다. name·phone 중 undefined가 아닌 것만 SET 절에 포함한다.
+ * 둘 다 undefined면 SQL을 실행하지 않고 null을 반환한다(이중 방어. controller가 이미 400 처리).
+ * 수정 후 최신 상태(등급 조인 포함)를 반환한다. 대상 행이 없으면 null.
+ */
+async function updateMember(id, { name, phone }) {
+  const sets = [];
+  const values = [];
+  if (name !== undefined) {
+    values.push(name);
+    sets.push(`name = $${values.length}`);
+  }
+  if (phone !== undefined) {
+    values.push(phone);
+    sets.push(`phone = $${values.length}`);
+  }
+  if (sets.length === 0) {
+    return null;
+  }
+  values.push(id);
+  const result = await query(
+    `UPDATE members
+        SET ${sets.join(', ')}
+      WHERE id = $${values.length}`,
+    values
+  );
+  return result.rowCount === 0 ? null : findMemberById(id);
+}
+
+module.exports = { insertMember, findMemberById, findAuthByEmail, updateMember };
