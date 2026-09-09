@@ -201,6 +201,52 @@ async function cancelReservation(id) {
   return row ? toReservation(row) : null;
 }
 
+/**
+ * 전체 예약을 연습실/날짜 조건으로 필터링해 조회한다(관리자 전용, 상태 필터 없음).
+ * practiceRoomId·date가 null이면 해당 조건은 통과된다(전체). to_char로 KST 하루 어긋남을 막는다.
+ */
+async function findReservations({ practiceRoomId, date }) {
+  const result = await query(
+    `SELECT id,
+            practice_room_id,
+            member_id,
+            to_char(reservation_date, 'YYYY-MM-DD') AS reservation_date,
+            start_time,
+            end_time,
+            reservation_status,
+            created_at
+       FROM reservations
+      WHERE ($1::int  IS NULL OR practice_room_id = $1)
+        AND ($2::date IS NULL OR reservation_date = $2::date)
+      ORDER BY reservation_date DESC, start_time DESC, id DESC`,
+    [practiceRoomId, date]
+  );
+  return result.rows.map(toReservation);
+}
+
+/**
+ * 관리자 강제취소. 상태 가드가 없다(§8) — 소유권·시작여부·현재 상태와 무관하게 항상
+ * canceled로 전이한다. 대상 미존재 시 0행 → null. 일반 회원 cancelReservation과
+ * 구조적으로 다른 지점이며 그래서 함수를 공유하지 않는다.
+ */
+async function forceCancelReservation(id) {
+  const result = await query(
+    `UPDATE reservations
+        SET reservation_status = 'canceled'
+      WHERE id = $1
+      RETURNING id,
+                practice_room_id,
+                member_id,
+                to_char(reservation_date, 'YYYY-MM-DD') AS reservation_date,
+                start_time,
+                end_time,
+                reservation_status,
+                created_at`,
+    [id]
+  );
+  return result.rows[0] ? toReservation(result.rows[0]) : null;
+}
+
 module.exports = {
   findReservedByRoomAndDate,
   findReservedForUpdate,
@@ -208,4 +254,6 @@ module.exports = {
   findReservationsByMember,
   findReservationById,
   cancelReservation,
+  findReservations,
+  forceCancelReservation,
 };
