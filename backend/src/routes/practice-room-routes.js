@@ -10,5 +10,6 @@ const router = express.Router();
 // BE-08이 같은 파일에 POST /:roomId/reservations를 추가하므로 라우트 단위 부착 관례를 유지한다.
 router.get('/', requireAuth, practiceRoomController.listRooms);
 router.get('/:roomId/reservations', requireAuth, practiceRoomController.getDayReservations);
+router.post('/:roomId/reservations', requireAuth, practiceRoomController.createReservation);
 
 module.exports = router;

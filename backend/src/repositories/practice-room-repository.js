@@ -50,4 +50,20 @@ async function findActiveRoomById(id) {
   return result.rows[0] ? toPracticeRoom(result.rows[0]) : null;
 }
 
-module.exports = { findActiveRooms, findActiveRoomById };
+/**
+ * id로 연습실을 조회하며 해당 행에 FOR UPDATE 잠금을 건다. is_active로 필터하지 않는다
+ * — 예약 신청(POST)은 미존재(404)와 비활성(403)을 구분해야 하므로 findActiveRoomById를 쓸 수 없다.
+ * 이 잠금이 동일 연습실에 대한 동시 예약 신청을 직렬화하는 실제 장치다(reservation-service 참고).
+ */
+async function findRoomByIdForUpdate(client, id) {
+  const result = await client.query(
+    `SELECT id, name, location, capacity, open_time, close_time, is_active
+       FROM practice_rooms
+      WHERE id = $1
+        FOR UPDATE`,
+    [id]
+  );
+  return result.rows[0] ? toPracticeRoom(result.rows[0]) : null;
+}
+
+module.exports = { findActiveRooms, findActiveRoomById, findRoomByIdForUpdate };
