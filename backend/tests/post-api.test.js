@@ -326,7 +326,17 @@ test('A-5 범위를 벗어난 page는 404가 아니라 200 + 빈 items다', asyn
 test('A-6 page·pageSize 불량은 400·500이 아니라 기본값/클램프로 처리된다', async () => {
   const boardId = 시드게시판[자유게시판명].id;
   // 형식 불량·하한 미달은 기본값으로 떨어진다(§6-2). 이 경로에 400은 정의되어 있지 않다.
-  const 기본값케이스 = ['?page=abc', '?page=0', '?page=-1', '?page=1.5', '?pageSize=0'];
+  // 같은 파라미터를 두 번 보내면 Express가 배열로 넘긴다. Number(['1','2'])는 NaN이라
+  // 기본값으로 떨어져야 하며, 배열이 SQL 바인딩까지 흘러가 500이 되면 안 된다.
+  const 기본값케이스 = [
+    '?page=abc',
+    '?page=0',
+    '?page=-1',
+    '?page=1.5',
+    '?pageSize=0',
+    '?page=1&page=2',
+    '?pageSize=5&pageSize=7',
+  ];
   for (const 쿼리 of 기본값케이스) {
     const 응답 = await 목록(준회원.accessToken, boardId, 쿼리);
     assert.equal(응답.status, 200, `${쿼리}: 400·500이 아니라 200이다`);
