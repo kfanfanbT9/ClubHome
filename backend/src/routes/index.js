@@ -7,6 +7,7 @@ const memberRoutes = require('./member-routes');
 const boardRoutes = require('./board-routes');
 const { postRoutes, boardPostRoutes } = require('./post-routes');
 const practiceRoomRoutes = require('./practice-room-routes');
+const { reservationRoutes, memberReservationRoutes } = require('./reservation-routes');
 
 const router = express.Router();
 
@@ -24,9 +25,11 @@ router.get('/health', async (req, res) => {
 // 도메인별 라우터는 /api 하위로 등록한다(swagger paths 키가 이미 /api를 포함, servers.url = "/").
 router.use('/api/auth', authRoutes);
 router.use('/api/members', memberRoutes);
+router.use('/api/members', memberReservationRoutes);
 router.use('/api/boards', boardRoutes);
 router.use('/api/boards', boardPostRoutes);
 router.use('/api/posts', postRoutes);
 router.use('/api/practice-rooms', practiceRoomRoutes);
+router.use('/api/reservations', reservationRoutes);
 
 module.exports = router;

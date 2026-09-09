@@ -97,4 +97,115 @@ async function insertReservation(client, { practiceRoomId, memberId, date, start
   };
 }
 
-module.exports = { findReservedByRoomAndDate, findReservedForUpdate, insertReservation };
+/**
+ * reservations 행을 swagger Reservation 스키마 형태(8키)로 변환한다. export하지 않는다.
+ * reservation_date는 SQL이 to_char로 문자열화해 넘긴 값이라 여기서 Date를 다루지 않는다.
+ */
+function toReservation(row) {
+  return {
+    id: row.id,
+    practiceRoomId: row.practice_room_id,
+    memberId: row.member_id,
+    reservationDate: row.reservation_date,
+    startTime: row.start_time.slice(0, 5),
+    endTime: row.end_time.slice(0, 5),
+    reservationStatus: row.reservation_status,
+    createdAt: row.created_at,
+  };
+}
+
+/**
+ * 회원 본인의 예약 내역을 상태 필터 없이(reserved/completed/canceled 전부) 조회한다.
+ * WHERE 선두가 idx_reservations_member와 일치한다. roomId 선택 조건은 문자열 concat 없이
+ * 순수 파라미터 바인딩으로 표현한다 — practiceRoomId가 null이면 $2가 NULL이 되어 조건이
+ * 항상 참이 되고 전체가 반환된다.
+ * reservation_date는 to_char로 문자열화한다 — pg가 DATE를 JS Date로 반환해 KST 서버에서
+ * 하루 어긋난 ISO 문자열이 되는 것을 막는 유일한 지점이다.
+ * ponytail: ($2 IS NULL OR ...)는 practice_room_id 조건이 인덱스 조건으로 승격되지 않는다.
+ * 회원당 예약 수가 수십 건 규모라 무의미하며, 실측 문제가 되면 그때 쿼리 2개로 분기한다.
+ */
+async function findReservationsByMember(memberId, practiceRoomId) {
+  const result = await query(
+    `SELECT id,
+            practice_room_id,
+            member_id,
+            to_char(reservation_date, 'YYYY-MM-DD') AS reservation_date,
+            start_time,
+            end_time,
+            reservation_status,
+            created_at
+       FROM reservations
+      WHERE member_id = $1
+        AND ($2::int IS NULL OR practice_room_id = $2)
+      ORDER BY reservation_date DESC, start_time DESC, id DESC`,
+    [memberId, practiceRoomId]
+  );
+  return result.rows.map(toReservation);
+}
+
+/**
+ * 예약 단건을 has_started(취소 인가 판정 전용 파생값, 응답에는 싣지 않는다)와 함께 조회한다.
+ * FOR UPDATE를 쓰지 않는다 — 상태 전이는 UPDATE의 WHERE가 원자적으로 보장한다.
+ *
+ * ponytail: 동호회 운영 시간대를 'Asia/Seoul'로 고정한다. reservation_date/start_time은
+ * 무시간대 벽시계 값이므로 비교 시 반드시 시간대를 명시해야 한다.
+ * 세션 TimeZone GUC에 의존하는 암묵 변환((date+time) <= now())을 쓰면 DB 설정 변경으로
+ * 조용히 깨진다. 운영 시간대가 바뀌면 이 리터럴 1곳만 고친다.
+ */
+async function findReservationById(id) {
+  const result = await query(
+    `SELECT id,
+            practice_room_id,
+            member_id,
+            to_char(reservation_date, 'YYYY-MM-DD') AS reservation_date,
+            start_time,
+            end_time,
+            reservation_status,
+            created_at,
+            ((reservation_date + start_time) AT TIME ZONE 'Asia/Seoul') <= now() AS has_started
+       FROM reservations
+      WHERE id = $1`,
+    [id]
+  );
+  const row = result.rows[0];
+  if (!row) {
+    return null;
+  }
+  return { ...toReservation(row), hasStarted: row.has_started };
+}
+
+/**
+ * 예약 상태를 canceled로 전이한다. AND reservation_status = 'reserved'가 상태 전이 가드다.
+ * 이미 canceled/completed면 0행 → null → service가 400으로 판정한다. 동시 취소 2건 중
+ * 하나만 200이 된다.
+ * 행을 삭제하지 않는다 — 이력이 남고 부분 유니크 인덱스 술어에서 빠져 재예약이 열린다.
+ * RETURNING이 응답의 유일한 출처다 — findReservationById 결과에 상태만 갈아끼우지 않는다.
+ */
+async function cancelReservation(id) {
+  const result = await query(
+    `UPDATE reservations
+        SET reservation_status = 'canceled'
+      WHERE id = $1
+        AND reservation_status = 'reserved'
+      RETURNING id,
+                practice_room_id,
+                member_id,
+                to_char(reservation_date, 'YYYY-MM-DD') AS reservation_date,
+                start_time,
+                end_time,
+                reservation_status,
+                created_at`,
+    [id]
+  );
+  const row = result.rows[0];
+  return row ? toReservation(row) : null;
+}
+
+module.exports = {
+  findReservedByRoomAndDate,
+  findReservedForUpdate,
+  insertReservation,
+  findReservationsByMember,
+  findReservationById,
+  cancelReservation,
+};
