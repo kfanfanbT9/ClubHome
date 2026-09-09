@@ -5,6 +5,7 @@ const { query } = require('../db/pool');
 const authRoutes = require('./auth-routes');
 const memberRoutes = require('./member-routes');
 const boardRoutes = require('./board-routes');
+const { postRoutes, boardPostRoutes } = require('./post-routes');
 
 const router = express.Router();
 
@@ -23,5 +24,7 @@ router.get('/health', async (req, res) => {
 router.use('/api/auth', authRoutes);
 router.use('/api/members', memberRoutes);
 router.use('/api/boards', boardRoutes);
+router.use('/api/boards', boardPostRoutes);
+router.use('/api/posts', postRoutes);
 
 module.exports = router;
