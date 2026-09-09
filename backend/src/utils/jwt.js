@@ -45,7 +45,8 @@ function signRefreshToken({ id }) {
 function verifyToken(token, secret, expectedTyp) {
   let payload;
   try {
-    payload = jwt.verify(token, secret);
+    // 알고리즘을 명시해 라이브러리 기본값에 의존하지 않는다(alg 혼동·none 공격 차단).
+    payload = jwt.verify(token, secret, { algorithms: ['HS256'] });
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       throw new AppError(401, 'TOKEN_EXPIRED', '토큰이 만료되었습니다.');
