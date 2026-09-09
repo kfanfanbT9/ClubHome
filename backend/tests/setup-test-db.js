@@ -92,7 +92,8 @@ async function main() {
   if (!fs.existsSync(envTest)) {
     fs.writeFileSync(
       envTest,
-      '# BE-11: 테스트 전용 DB. npm test 가 --env-file-if-exists 로 읽는다. git 미포함.\n' +
+      '# BE-11: 테스트 전용 DB. npm test 가 --env-file 로 읽는다(없으면 테스트가 실행되지 않는다).\n' +
+      '# git 미포함(.gitignore 의 .env.* 규칙). 이 파일은 npm run test:db 가 자동 생성한다.\n' +
       `DATABASE_URL=${testUrl.href}\n`,
     );
     console.log('생성: backend/.env.test');

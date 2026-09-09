@@ -9,7 +9,7 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "test:db": "node tests/setup-test-db.js",
-    "test": "node --env-file-if-exists=.env.test --test"
+    "test": "node --env-file=.env.test --test"
   },
   "license": "ISC",
   "dependencies": {
