@@ -2,6 +2,7 @@
 
 const express = require('express');
 const { query } = require('../db/pool');
+const authRoutes = require('./auth-routes');
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.get('/health', async (req, res) => {
   res.status(200).json({ status: 'ok', db });
 });
 
-// 도메인별 라우터는 후속 Task(BE-03~BE-10)에서 이 아래에 /api 하위로 등록한다.
+// 도메인별 라우터는 /api 하위로 등록한다(swagger paths 키가 이미 /api를 포함, servers.url = "/").
+router.use('/api/auth', authRoutes);
 
 module.exports = router;
