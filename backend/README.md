@@ -15,7 +15,10 @@ npm start              # http://localhost:3000
 ```
 
 - 개발 모드: `npm run dev` (파일 변경 시 자동 재시작)
-- 테스트: `npm test`
+- 테스트: `npm run test:db` (최초 1회, 테스트 DB 생성 + 스키마·시드 적용 + `.env.test` 생성) → `npm test`
+  - `npm test`는 `.env.test`의 `DATABASE_URL`(테스트 DB)만 덮어쓰고 JWT 등 나머지는 `.env`에서 읽는다.
+  - `.env.test`가 없으면 경고만 남기고 `.env`(개발 DB)로 폴백하지만, 신규 service 테스트가 개발 DB에서 실행을 거부한다.
+  - Node 20.12+ 필요(`--env-file-if-exists`). 실측 v24.20.0.
 - 헬스체크: `GET /health` → `{ "status": "ok", "db": "ok" }`
 
 DB 스키마는 `docs/schema.sql`이 단일 소스이며, 개발용 초기 데이터는 `docs/seed-dev.sql`로 적용합니다.
