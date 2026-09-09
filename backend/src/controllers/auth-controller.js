@@ -2,15 +2,9 @@
 
 const { AppError } = require('../middlewares/errorHandler');
 const authService = require('../services/auth-service');
+const { requireString } = require('../middlewares/validate');
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** 한국어 조사 선택. 마지막 글자에 받침이 있으면 withFinal, 없으면 withoutFinal을 쓴다. */
-function josa(word, withFinal, withoutFinal) {
-  const code = word.charCodeAt(word.length - 1) - 0xac00;
-  const hasFinal = code >= 0 && code <= 11171 && code % 28 !== 0;
-  return hasFinal ? withFinal : withoutFinal;
-}
 
 /**
  * 이메일 정규화. members.email UNIQUE는 대소문자를 구분하므로 가입·로그인이
@@ -18,22 +12,6 @@ function josa(word, withFinal, withoutFinal) {
  */
 function normalizeEmail(value) {
   return value.trim().toLowerCase();
-}
-
-/** 문자열 필수값 검증. trim된 문자열을 반환한다. 위반 시 400. */
-function requireString(value, field, { maxLength }) {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new AppError(400, 'BAD_REQUEST', `${field}${josa(field, '을', '를')} 입력해 주세요.`);
-  }
-  const trimmed = value.trim();
-  if (trimmed.length > maxLength) {
-    throw new AppError(
-      400,
-      'BAD_REQUEST',
-      `${field}${josa(field, '은', '는')} ${maxLength}자 이하여야 합니다.`
-    );
-  }
-  return trimmed;
 }
 
 /** 이메일 필수값 검증(가입용). 정규화된 문자열을 반환한다. 위반 시 400. */
