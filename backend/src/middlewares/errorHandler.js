@@ -29,9 +29,12 @@ function errorHandler(error, req, res, next) {
     console.error(error);
   }
 
+  const isServerError = status >= 500;
+
   res.status(status).json({
-    code: error.code || 'INTERNAL_ERROR',
-    message: status >= 500 ? '서버 오류가 발생했습니다.' : error.message,
+    // AppError가 아닌 오류(예: express.json()의 JSON 파싱 실패)도 4xx/5xx를 구분해 표기한다.
+    code: error.code || (isServerError ? 'INTERNAL_ERROR' : 'BAD_REQUEST'),
+    message: isServerError ? '서버 오류가 발생했습니다.' : error.message,
   });
 }
 

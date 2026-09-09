@@ -23,12 +23,18 @@ async function withTransaction(callback) {
     await client.query('BEGIN');
     const result = await callback(client);
     await client.query('COMMIT');
+    client.release();
     return result;
   } catch (error) {
-    await client.query('ROLLBACK');
+    try {
+      await client.query('ROLLBACK');
+      client.release();
+    } catch (rollbackError) {
+      // ROLLBACK까지 실패하면 커넥션 상태를 신뢰할 수 없으므로 풀에 되돌리지 않고 폐기한다.
+      console.error(rollbackError);
+      client.release(rollbackError);
+    }
     throw error;
-  } finally {
-    client.release();
   }
 }
 

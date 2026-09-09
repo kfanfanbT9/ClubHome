@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
 const express = require('express');
 
 const app = require('../src/app');
-const { pool } = require('../src/db/pool');
+const { pool, query, withTransaction } = require('../src/db/pool');
 const { AppError, errorHandler } = require('../src/middlewares/errorHandler');
 
 /** 임시 포트로 앱을 띄우고 콜백에 base URL을 넘긴다. */
@@ -70,6 +70,44 @@ test('예상치 못한 예외는 500으로 감싸고 내부 메시지를 노출�
     assert.equal(body.code, 'INTERNAL_ERROR');
     assert.ok(!body.message.includes('password_hash'));
   });
+});
+
+test('잘못된 JSON 본문은 500이 아닌 400으로 응답한다', async () => {
+  const target = express();
+  target.use(express.json());
+  target.post('/echo', (req, res) => res.json(req.body));
+  target.use(errorHandler);
+
+  await withServer(target, async (base) => {
+    const response = await fetch(`${base}/echo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{깨진 JSON',
+    });
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).code, 'BAD_REQUEST');
+  });
+});
+
+test('withTransaction은 성공 시 COMMIT, 오류 시 ROLLBACK한다', async () => {
+  await query('CREATE TABLE IF NOT EXISTS tx_probe (v integer)');
+  try {
+    await assert.rejects(
+      withTransaction(async (client) => {
+        await client.query('INSERT INTO tx_probe VALUES (1)');
+        throw new Error('의도적 실패');
+      }),
+      /의도적 실패/,
+    );
+    let result = await query('SELECT count(*)::int AS count FROM tx_probe');
+    assert.equal(result.rows[0].count, 0, 'ROLLBACK되어 행이 남지 않아야 한다');
+
+    await withTransaction((client) => client.query('INSERT INTO tx_probe VALUES (2)'));
+    result = await query('SELECT count(*)::int AS count FROM tx_probe');
+    assert.equal(result.rows[0].count, 1, 'COMMIT되어 행이 남아야 한다');
+  } finally {
+    await query('DROP TABLE IF EXISTS tx_probe');
+  }
 });
 
 test.after(async () => {
