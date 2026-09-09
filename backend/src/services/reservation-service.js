@@ -107,4 +107,37 @@ async function cancelReservation(reservationId, memberId, isAdmin) {
   return canceled;
 }
 
-module.exports = { createReservation, getMyReservations, cancelReservation };
+/** 관리자 전용 함수의 첫 관문. export하지 않는다 — 이 파일의 service 함수들만 공유한다. */
+function assertAdmin(isAdmin) {
+  if (!isAdmin) {
+    throw new AppError(403, 'FORBIDDEN', '관리자만 접근할 수 있습니다.');
+  }
+}
+
+/** 전체 예약 현황·내역을 연습실/날짜 조건으로 조회한다(관리자 전용, 상태 필터 없음). */
+async function getAllReservations({ practiceRoomId, date }, isAdmin) {
+  assertAdmin(isAdmin);
+  return reservationRepository.findReservations({ practiceRoomId, date });
+}
+
+/**
+ * 관리자 강제취소. 소유권·시작여부·현재 상태를 조회조차 하지 않는다(§8) — 항상 canceled로
+ * 전이하는 운영 목적 예외다. 일반 회원 cancelReservation과 함수를 공유하지 않는다.
+ */
+async function forceCancelReservation(reservationId, isAdmin) {
+  assertAdmin(isAdmin);
+
+  const canceled = await reservationRepository.forceCancelReservation(reservationId);
+  if (canceled === null) {
+    throw new AppError(404, 'NOT_FOUND', '예약을 찾을 수 없습니다.');
+  }
+  return canceled;
+}
+
+module.exports = {
+  createReservation,
+  getMyReservations,
+  cancelReservation,
+  getAllReservations,
+  forceCancelReservation,
+};

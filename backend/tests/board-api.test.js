@@ -472,13 +472,33 @@ test('E-3 service 직접 호출의 성공 경로가 게시판을 반환한다', 
 });
 
 test('E-4 repository 소스는 등급을 알지 못한다', async () => {
-  // 인가가 SQL로 내려가는 회귀 방어(§4-3). repository가 gradeLevel을 인자로 받거나
-  // (min_grade_level <= $1) AS can_access 형태로 판정을 내려받으면 여기서 깨진다.
-  const 소스 = fs.readFileSync(
-    path.join(__dirname, '..', 'src', 'repositories', 'board-repository.js'),
-    'utf8',
-  );
-  for (const 금지 of ['gradeLevel', 'min_grade_level <=', 'canAccess', 'can_access']) {
+  // 인가가 SQL로 내려가는 회귀 방어(§4-3). repository가 (min_grade_level <= $1) AS can_access
+  // 형태로 판정을 내려받으면 여기서 깨진다.
+  //
+  // BE-10에서 판정 방식을 좁혔다. 원래는 식별자 'gradeLevel'을 금지 토큰에 넣어
+  // "등급 값을 인자로 받는 것" 자체를 막았지만, 등급서열 재배치 시 FK 23503을 막는
+  // countBoardsByMinGradeLevel(등호 COUNT, 인가 판정 아님)에 오탐했다. 실제로 막아야 하는
+  // 것은 min_grade_level을 '비교'하는 SQL이므로 비교 연산자 형태를 양방향으로 열거한다
+  // (식별자 이름 검사보다 좁고, 진짜 실패 형태에는 더 강하다).
+  // 공백을 전부 제거한 뒤 검사한다 — 'min_grade_level <= $1'이든 'min_grade_level<=$1'이든
+  // 줄바꿈으로 나눠 썼든 같은 형태로 걸린다. 서브쿼리를 통한 간접 비교는 여전히 우회
+  // 가능하지만, 그런 형태는 등호 COUNT로 오해할 여지가 없어 리뷰 단계에서 드러난다.
+  const 소스 = fs
+    .readFileSync(path.join(__dirname, '..', 'src', 'repositories', 'board-repository.js'), 'utf8')
+    .replace(/\s+/g, '');
+  for (const 금지 of [
+    // 'min_grade_level<'는 '<='까지 함께 잡는다. 반대로 '<=min_grade_level'은
+    // '<min_grade_level'에 걸리지 않으므로(사이에 '=') 양쪽을 따로 열거한다.
+    'min_grade_level<',
+    'min_grade_level>',
+    '<min_grade_level',
+    '<=min_grade_level',
+    '>min_grade_level',
+    '>=min_grade_level',
+    'min_grade_levelBETWEEN',
+    'canAccess',
+    'can_access',
+  ]) {
     assert.equal(
       소스.includes(금지),
       false,

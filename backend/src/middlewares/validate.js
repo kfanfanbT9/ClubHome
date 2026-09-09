@@ -2,7 +2,11 @@
 
 const { AppError } = require('./errorHandler');
 
-/** 한국어 조사 선택. private — export하지 않는다. */
+/**
+ * 한국어 조사 선택. 받침 유무로 갈린다.
+ * BE-10에서 admin-controller의 검증 메시지가 세 번째 사용처가 되어 export로 승격했다
+ * (원칙 §1 "3회 반복 후 공통화"). 그 전에는 이 파일의 private 헬퍼였다.
+ */
 function josa(word, withFinal, withoutFinal) {
   const code = word.charCodeAt(word.length - 1) - 0xac00;
   const hasFinal = code >= 0 && code <= 11171 && code % 28 !== 0;
@@ -28,4 +32,4 @@ function requireString(value, field, { maxLength } = {}) {
   return trimmed;
 }
 
-module.exports = { requireString };
+module.exports = { requireString, josa };

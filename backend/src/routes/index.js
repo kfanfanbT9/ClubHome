@@ -8,6 +8,7 @@ const boardRoutes = require('./board-routes');
 const { postRoutes, boardPostRoutes } = require('./post-routes');
 const practiceRoomRoutes = require('./practice-room-routes');
 const { reservationRoutes, memberReservationRoutes } = require('./reservation-routes');
+const adminRoutes = require('./admin-routes');
 
 const router = express.Router();
 
@@ -31,5 +32,6 @@ router.use('/api/boards', boardPostRoutes);
 router.use('/api/posts', postRoutes);
 router.use('/api/practice-rooms', practiceRoomRoutes);
 router.use('/api/reservations', reservationRoutes);
+router.use('/api/admin', adminRoutes);
 
 module.exports = router;

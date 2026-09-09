@@ -125,4 +125,46 @@ async function updateMember(id, { name, phone }) {
   return result.rowCount === 0 ? null : findMemberById(id);
 }
 
-module.exports = { insertMember, findMemberById, findAuthByEmail, updateMember };
+/**
+ * 이름/이메일로 회원을 검색한다(관리자 전용). q가 null이면 전체를 반환한다(BE-09 관례).
+ * 패턴을 바인딩 값 안에서 조립하므로 문자열 concat이 아니다. password_hash는 SELECT하지 않는다.
+ */
+async function findMembers(q) {
+  const result = await query(
+    `SELECT m.id, m.email, m.name, m.phone, m.member_grade_id, m.account_status, m.joined_at,
+            g.id          AS grade_id,
+            g.name        AS grade_name,
+            g.description AS grade_description,
+            g.grade_level,
+            g.is_admin
+       FROM members m
+       JOIN member_grades g ON g.id = m.member_grade_id
+      WHERE ($1::text IS NULL
+             OR m.name  ILIKE '%' || $1 || '%'
+             OR m.email ILIKE '%' || $1 || '%')
+      ORDER BY m.id`,
+    [q]
+  );
+  return result.rows.map(toMember);
+}
+
+/**
+ * 회원의 등급을 변경한다(관리자 전용). 대상 미존재 시 0행 → null.
+ * 조인된 memberGrade를 실어야 하므로 findMemberById로 재조회한다(트랜잭션 없음).
+ */
+async function updateMemberGradeId(id, memberGradeId) {
+  const result = await query(`UPDATE members SET member_grade_id = $2 WHERE id = $1`, [
+    id,
+    memberGradeId,
+  ]);
+  return result.rowCount === 0 ? null : findMemberById(id);
+}
+
+module.exports = {
+  insertMember,
+  findMemberById,
+  findAuthByEmail,
+  updateMember,
+  findMembers,
+  updateMemberGradeId,
+};
