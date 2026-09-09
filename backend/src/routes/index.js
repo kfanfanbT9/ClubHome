@@ -6,6 +6,7 @@ const authRoutes = require('./auth-routes');
 const memberRoutes = require('./member-routes');
 const boardRoutes = require('./board-routes');
 const { postRoutes, boardPostRoutes } = require('./post-routes');
+const practiceRoomRoutes = require('./practice-room-routes');
 
 const router = express.Router();
 
@@ -26,5 +27,6 @@ router.use('/api/members', memberRoutes);
 router.use('/api/boards', boardRoutes);
 router.use('/api/boards', boardPostRoutes);
 router.use('/api/posts', postRoutes);
+router.use('/api/practice-rooms', practiceRoomRoutes);
 
 module.exports = router;
