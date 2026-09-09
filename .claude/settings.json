@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/update-doc-list.js 2>/dev/null || true",
+            "shell": "bash"
+          }
+        ]
+      }
+    ]
+  }
+}
