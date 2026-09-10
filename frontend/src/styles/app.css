@@ -618,3 +618,95 @@ a {
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
+
+/* ============================================================
+   게시글 상세 (화면 8-2)
+   ============================================================ */
+.post__board {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.post__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-3) 0 0;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.post__content {
+  padding: var(--space-6) 0;
+  border-bottom: 1px solid var(--color-border);
+  line-height: var(--leading-normal);
+  /* 입력한 줄바꿈을 그대로 살리고, 긴 단어가 폭을 밀어내지 않게 한다 */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.post__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.post__owner-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* 위험 버튼: 글자·테두리 동색, 배경 투명 (9-style.md §6) */
+.button--danger {
+  background: none;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.button--danger:hover:not(:disabled) {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+/* 삭제 확인 — 버튼 자리에서 한 번 더 묻는다 */
+.confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.confirm__ask {
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+
+/* ============================================================
+   글 작성·수정 (화면 8-1)
+   ============================================================ */
+.field__textarea {
+  /* 입력창 규칙의 고정 높이를 여기서만 푼다 */
+  height: auto;
+  padding: var(--space-3);
+  line-height: var(--leading-normal);
+  resize: vertical;
+}
+
+.form__actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+/* 링크로 만든 버튼도 버튼 높이에 맞춘다 */
+a.button {
+  display: inline-flex;
+  align-items: center;
+}

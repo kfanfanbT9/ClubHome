@@ -15,4 +15,5 @@ export const endpoints = {
   me: '/api/members/me',
   boards: '/api/boards',
   boardPosts: (boardId: number) => `/api/boards/${boardId}/posts`,
+  post: (postId: number) => `/api/posts/${postId}`,
 } as const;

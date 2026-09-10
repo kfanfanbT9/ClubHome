@@ -6,6 +6,8 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import MyPage from './pages/MyPage';
 import NotReadyPage from './pages/NotReadyPage';
+import PostDetailPage from './pages/PostDetailPage';
+import PostFormPage from './pages/PostFormPage';
 import PostListPage from './pages/PostListPage';
 import SignupPage from './pages/SignupPage';
 
@@ -29,6 +31,9 @@ export default function App() {
         <Route element={<RequireAuth />}>
           <Route path="/boards" element={<BoardListPage />} />
           <Route path="/boards/:boardId/posts" element={<PostListPage />} />
+          <Route path="/boards/:boardId/posts/new" element={<PostFormPage />} />
+          <Route path="/posts/:postId" element={<PostDetailPage />} />
+          <Route path="/posts/:postId/edit" element={<PostFormPage />} />
           <Route path="/practice-rooms" element={<NotReadyPage />} />
           <Route path="/me" element={<MyPage />} />
           <Route path="/admin" element={<NotReadyPage />} />
