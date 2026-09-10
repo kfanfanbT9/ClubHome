@@ -9,9 +9,14 @@ import { createQueryClient } from '../src/lib/queryClient';
  * MemoryRouter를 쓰는 이유는 jsdom에 실제 히스토리가 없어도 경로를 지정할 수 있기 때문이다.
  */
 export function renderWithProviders(ui: ReactNode, 경로 = '/') {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>
-      <MemoryRouter initialEntries={[경로]}>{ui}</MemoryRouter>
-    </QueryClientProvider>,
-  );
+  // 캐시 무효화를 확인해야 하는 테스트가 있어 client를 함께 돌려준다.
+  const queryClient = createQueryClient();
+  return {
+    queryClient,
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[경로]}>{ui}</MemoryRouter>
+      </QueryClientProvider>,
+    ),
+  };
 }
