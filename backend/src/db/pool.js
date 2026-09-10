@@ -1,6 +1,7 @@
 'use strict';
 
 const { Pool } = require('pg');
+const logger = require('../utils/logger');
 
 // DATABASE_URL이 없으면 pg가 PGHOST/PGUSER 등 표준 환경변수로 폴백한다
 // (프로젝트 구조 설계 원칙 §5 환경변수 목록).
@@ -29,9 +30,12 @@ async function withTransaction(callback) {
     try {
       await client.query('ROLLBACK');
       client.release();
+      // 롤백은 예약 겹침(409)처럼 의도된 거부일 때도 일어난다. 어느 쪽인지는 code로 갈린다 —
+      // AppError면 애플리케이션 코드('RESERVATION_SLOT_CONFLICT' 등), pg 오류면 SQLSTATE다.
+      logger.warn('트랜잭션 롤백', { reason: error.code || error.message });
     } catch (rollbackError) {
       // ROLLBACK까지 실패하면 커넥션 상태를 신뢰할 수 없으므로 풀에 되돌리지 않고 폐기한다.
-      console.error(rollbackError);
+      logger.error('트랜잭션 롤백 실패 - 커넥션 폐기', { error: rollbackError });
       client.release(rollbackError);
     }
     throw error;

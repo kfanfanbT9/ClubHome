@@ -1,6 +1,6 @@
 -- 색연필 색소폰 동호회 홈페이지 - 데이터베이스 스키마 (DDL)
 -- 대상 DBMS: PostgreSQL 17
--- 출처: docs/7-erd.md (v0.5)
+-- 출처: docs/7-erd.md
 -- 실행 예: psql -d clubhome -f docs/schema.sql
 --
 -- 생성 순서는 외래키 의존 관계를 따른다:
@@ -51,6 +51,8 @@ CREATE TABLE boards (
     id              INTEGER      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name            VARCHAR(100) NOT NULL,
     description     TEXT,
+    -- ON UPDATE 미지정 = NO ACTION: 게시판이 참조 중인 grade_level 값은 변경할 수 없다.
+    -- 등급 수정 API가 참조 게시판 수를 먼저 세어 409로 거부한다(ERD §4 참고).
     min_grade_level INTEGER      NOT NULL
         REFERENCES member_grades (grade_level) ON DELETE RESTRICT,
     is_active       BOOLEAN      NOT NULL DEFAULT TRUE      -- 사용여부

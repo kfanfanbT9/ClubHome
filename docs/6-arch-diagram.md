@@ -1,7 +1,7 @@
 # 색연필 색소폰 동호회 홈페이지 - 기술 아키텍처 다이어그램
 
 ## 0. 문서 개요
-본 문서는 도메인 정의서(`1-domain-definition.md`, v0.6), PRD(`2-PRD.md`, v0.7), 프로젝트 구조 설계 원칙(`5-project-principle.md`, v0.4), 데이터베이스 ERD(`7-erd.md`, v0.5)를 기반으로 시스템 전체 구조와 주요 비즈니스 로직 흐름을 Mermaid 다이어그램으로 표현한다.
+본 문서는 도메인 정의서(`1-domain-definition.md`), PRD(`2-PRD.md`), 프로젝트 구조 설계 원칙(`5-project-principle.md`), 데이터베이스 ERD(`7-erd.md`)를 기반으로 시스템 전체 구조와 주요 비즈니스 로직 흐름을 Mermaid 다이어그램으로 표현한다.
 
 ## 변경 이력
 | Version | Date | Changes | Author |
@@ -9,6 +9,11 @@
 | 0.1 | 2026-09-09 | 최초 작성 | Kang SangSoo |
 | 0.2 | 2026-09-09 | 0절 참조 문서 버전 표기 정정(프로젝트 구조 설계 원칙 v0.2→v0.3) 및 ERD(7-erd.md v0.3) 참조 추가 | Kang SangSoo |
 | 0.3 | 2026-09-09 | 0절 참조 문서 버전 표기 정정(PRD v0.6→v0.7, 프로젝트 구조 설계 원칙 v0.3→v0.4, ERD v0.3→v0.5). 다이어그램 변경 없음 | Kang SangSoo |
+| 0.4 | 2026-09-10 | 백엔드 구현 결과 반영: §2.2 예약 신청 시퀀스에 연습실 부모 행 잠금 단계 추가(ERD v0.6 §4의 팬텀 삽입 차단), §2.3 비활성 게시판 응답을 "404/403"에서 404로 확정. 0절 참조 문서 버전 표기 정정(프로젝트 구조 설계 원칙 v0.4→v0.5, ERD v0.5→v0.6) | Kang SangSoo |
+| 0.5 | 2026-09-10 | 0절 참조 문서 버전 표기 정정(프로젝트 구조 설계 원칙 v0.5→v0.6, ERD v0.6→v0.7). 다이어그램 변경 없음 | Kang SangSoo |
+| 0.6 | 2026-09-10 | 0절 참조 문서 버전 표기 정정(프로젝트 구조 설계 원칙 v0.6→v0.7, ERD v0.7→v0.8). 다이어그램 변경 없음 | Kang SangSoo |
+| 0.7 | 2026-09-10 | 0절 참조에서 버전 표기 제거(프로젝트 구조 설계 원칙 §8 문서 관리 원칙 적용). 다이어그램 변경 없음 | Kang SangSoo |
+| 0.8 | 2026-09-10 | 코드베이스 실측 결과 반영: §1 다이어그램에 실제 존재하는 공통 미들웨어(요청 로깅 → CORS → JSON 파싱)와 `errorHandler` 노드 추가. 종전 다이어그램은 요청이 곧바로 routes로 들어가는 것처럼 보였다. 미들웨어 등록 순서의 이유와 `/api-docs`·`/swagger.yaml`이 조건부로만 열린다는 설명도 본문에 추가 | Kang SangSoo |
 
 ## 1. 전체 시스템 구조
 
@@ -21,20 +26,27 @@ flowchart TB
     end
 
     subgraph Server["Express 서버 (Node.js, 단일 인스턴스)"]
+        Mw["공통 미들웨어\n요청 로깅 → CORS → JSON 파싱"]
         Routes["routes\n(JWT 인증 미들웨어)"]
         Controller["controller\n(요청 파싱/응답 형식)"]
         Service["service\n(비즈니스 로직, 인가 판단, 트랜잭션)"]
         Repository["repository\n(pg 파라미터 바인딩 SQL)"]
-        Routes --> Controller --> Service --> Repository
+        Err["errorHandler\n(표준 오류 응답 + 사유 로깅)"]
+        Mw --> Routes --> Controller --> Service --> Repository
+        Service -. "AppError" .-> Err
     end
 
     DB[("PostgreSQL 17\nmembers / member_grades\nboards / posts\npractice_rooms / reservations")]
 
-    FE -- "HTTPS REST API\n(JWT Access Token)" --> Routes
+    FE -- "HTTPS REST API\n(JWT Access Token)" --> Mw
     Repository -- "SQL (pg Pool)" --> DB
 ```
 
 프론트엔드는 TanStack Query로만 서버 데이터를 가져오고, 백엔드는 routes→controller→service→repository 순서로 단방향 의존한다.
+
+공통 미들웨어는 라우터보다 앞에 등록되어 모든 요청을 지나간다. 요청 로깅이 가장 앞이라 CORS로 막힌 요청도 로그에 남고, CORS는 본문 파싱보다 앞이라 preflight(`OPTIONS`)가 라우터에 닿지 않고 204로 끝난다. `errorHandler`는 스택 맨 뒤에 있어 어느 레이어에서 던진 `AppError`든 같은 형식(`{code, message}`)으로 응답하며, 4xx는 사유만·5xx는 스택까지 로그에 남긴다. 이 서버는 `GET /health`로 DB 연결까지 확인하고 실패 시 503을 반환한다.
+
+`ENABLE_API_DOCS=true`인 경우에만 `GET /api-docs`(Swagger UI)와 `GET /swagger.yaml`이 추가로 등록된다. API 소비자용 경로가 아니라 개발·운영 편의 기능이므로 위 다이어그램에는 넣지 않았다.
 
 ## 2. 주요 비즈니스 로직 시퀀스 다이어그램
 
@@ -105,6 +117,7 @@ sequenceDiagram
     FE->>API: POST /api/practice-rooms/:roomId/reservations
     API->>SVC: 예약 신청 요청
     SVC->>DB: BEGIN
+    SVC->>DB: 연습실 행 잠금(SELECT ... FOR UPDATE) - 동시 신청 직렬화
     SVC->>DB: 선택 구간 슬롯 잠금 조회(중복 확인)
     alt 구간 내 하나라도 기존 예약 존재
         SVC->>DB: ROLLBACK
@@ -138,7 +151,7 @@ sequenceDiagram
     DB-->>SVC: 최소등급, 사용여부, 회원등급
     alt 게시판이 비활성 상태
         SVC-->>API: 접근 불가
-        API-->>FE: 404/403 비활성 게시판
+        API-->>FE: 404 비활성 게시판(존재 노출 방지)
     else 회원등급 < 게시판 최소등급
         SVC-->>API: 인가 실패
         API-->>FE: 403 이용 권한 없음

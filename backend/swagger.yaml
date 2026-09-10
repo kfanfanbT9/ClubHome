@@ -17,25 +17,60 @@
 # |         |            | 연습실 목록 조회(GET) 엔드포인트 추가      |              |
 # |         |            | (비활성 항목 포함, 와이어프레임 13·14번),  |              |
 # |         |            | 8-plan 참조 버전 표기 v0.2→v0.3 정정      |              |
+# | 0.2.1   | 2026-09-10 | 회원등급 수정(PATCH) 409 설명에            | Kang SangSoo |
+# |         |            | MEMBER_GRADE_LEVEL_IN_USE 케이스 추가     |              |
+# |         |            | (참조 중인 등급서열 변경 거부 - 기존에는   |              |
+# |         |            | 중복만 적혀 있었다), info.description의    |              |
+# |         |            | 참조 문서 버전 표기 정정(원칙 v0.4→v0.5,  |              |
+# |         |            | ERD v0.5→v0.6, 8-plan v0.3→v0.5).        |              |
+# |         |            | 엔드포인트·스키마 변경 없음(설명만)        |              |
+# | 0.2.2   | 2026-09-10 | info.description의 참조 문서 버전 표기     | Kang SangSoo |
+# |         |            | 정정(원칙 v0.5→v0.6, ERD v0.6→v0.7,       |              |
+# |         |            | 8-plan v0.5→v0.6). 엔드포인트·스키마       |              |
+# |         |            | 변경 없음                                 |              |
+# | 0.3.0   | 2026-09-10 | GET /health 에 503 응답 추가(DB 연결 실패). | Kang SangSoo |
+# |         |            | 기존에는 DB가 끊겨도 200 + db:"error" 여서 |              |
+# |         |            | 상태코드만 보는 프로브가 장애를 감지할 수  |              |
+# |         |            | 없었다. 응답 본문을 Health 스키마로 분리   |              |
+# |         |            | 하고 status/db 에 enum(ok|error) 명시      |              |
+# | 0.3.1   | 2026-09-10 | info.description의 참조 문서 버전 표기     | Kang SangSoo |
+# |         |            | 정정(원칙 v0.6→v0.7, ERD v0.7→v0.8,       |              |
+# |         |            | 8-plan v0.6→v0.7). 엔드포인트·스키마       |              |
+# |         |            | 변경 없음                                 |              |
+# | 0.3.2   | 2026-09-10 | info.description의 참조 문서 목록에서      | Kang SangSoo |
+# |         |            | 버전 표기 제거(프로젝트 구조 설계 원칙 §8  |              |
+# |         |            | 문서 관리 원칙 적용 - 문서 하나를 고칠 때  |              |
+# |         |            | 참조 표기가 연쇄로 올라가는 문제 해소).    |              |
+# |         |            | 엔드포인트·스키마 변경 없음                |              |
+# | 0.3.3   | 2026-09-10 | info.description에 paths 밖의 두 경로     | Kang SangSoo |
+# |         |            | (/api-docs, /swagger.yaml) 안내 추가.     |              |
+# |         |            | API 리소스가 아니고 ENABLE_API_DOCS 조건부  |              |
+# |         |            | 이므로 paths 에는 넣지 않았다.             |              |
+# |         |            | 엔드포인트·스키마 변경 없음                |              |
 # =============================================================================
 
 openapi: 3.0.3
 info:
   title: 색연필 색소폰 동호회 홈페이지 API
-  version: 0.2.0
+  version: 0.3.3
   description: |
     색소폰 동호회 "색연필" 홈페이지 백엔드 API 명세.
     회원/등급/게시판/게시글/연습실/예약 6개 도메인과 인증(JWT Access+Refresh)을 다룬다.
 
     참고 문서 (근거):
-    - `docs/2-PRD.md` (v0.7) — 기능 요구사항(F-ID), 인증 정책
-    - `docs/1-domain-definition.md` (v0.6) — 엔티티·비즈니스 규칙(§6)
-    - `docs/3-user-scenario.md` (v0.7) — 정상/예외 흐름
-    - `docs/5-project-principle.md` (v0.4) — 네이밍/경로 규칙, 도메인 용어 매핑표
-    - `docs/7-erd.md` (v0.5), `docs/schema.sql` — 필드/타입/제약조건
-    - `docs/8-plan.md` (v0.3) — Task별 엔드포인트·완료조건(기대 상태코드)
+    - `docs/2-PRD.md` — 기능 요구사항(F-ID), 인증 정책
+    - `docs/1-domain-definition.md` — 엔티티·비즈니스 규칙(§6)
+    - `docs/3-user-scenario.md` — 정상/예외 흐름
+    - `docs/5-project-principle.md` — 네이밍/경로 규칙, 도메인 용어 매핑표
+    - `docs/7-erd.md`, `docs/schema.sql` — 필드/타입/제약조건
+    - `docs/8-plan.md` — Task별 엔드포인트·완료조건(기대 상태코드)
 
     범위 제외: 자료실, 파일 업로드, 알림, 소셜 로그인, 회원 탈퇴 API, 계정상태 자동전이(F-04)·예약 자동완료(F-23) 배치 로직(P1, API 없음).
+
+    아래 `paths`에 없지만 서버가 함께 제공하는 경로가 둘 있다. API 소비자용 리소스가 아니라
+    개발·운영 편의 기능이고 `ENABLE_API_DOCS=true`일 때만 등록되므로 스펙에 포함하지 않았다.
+    - `GET /api-docs` — 이 문서를 렌더링하는 Swagger UI
+    - `GET /swagger.yaml` — 이 스펙 원문(위 UI가 브라우저에서 읽어 파싱한다)
 
 servers:
   - url: /
@@ -69,22 +104,30 @@ paths:
     get:
       tags: [Ops]
       summary: 헬스체크
-      description: DB 연결 상태를 포함한 서버 상태 확인. 인증 불필요.
+      description: |
+        DB 연결 상태를 포함한 서버 상태 확인. 인증 불필요.
+        DB 연결이 실패하면 200이 아니라 **503**으로 응답하므로, 상태코드만 보는 프로브로도
+        장애를 감지할 수 있다(본문 파싱이 필요 없다).
       security: []
       responses:
         "200":
-          description: 정상
+          description: "정상 — `status`와 `db`가 모두 `ok`"
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-                  db:
-                    type: string
-                    example: ok
+                $ref: "#/components/schemas/Health"
+              example:
+                status: ok
+                db: ok
+        "503":
+          description: "DB 연결 실패 — `status`와 `db`가 모두 `error`. 서버 프로세스는 살아 있으나 서비스 불가"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              example:
+                status: error
+                db: error
 
   /api/auth/signup:
     post:
@@ -721,7 +764,12 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: 등급명 또는 등급서열(grade_level) 중복
+          description: |
+            다음 두 가지 경우다.
+            - `MEMBER_GRADE_DUPLICATE`: 등급명 또는 등급서열(grade_level)이 다른 등급과 중복
+            - `MEMBER_GRADE_LEVEL_IN_USE`: 변경 전 등급서열을 최소등급으로 참조하는 게시판이 있어 서열 변경 불가
+              (`boards.min_grade_level` FK는 `ON UPDATE NO ACTION`이라 참조 중인 값을 옮길 수 없다.
+              해당 게시판의 최소등급을 먼저 다른 서열로 바꿔야 한다 - ERD §4 참고)
           content:
             application/json:
               schema:
@@ -1060,6 +1108,19 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
+    Health:
+      type: object
+      required: [status, db]
+      properties:
+        status:
+          type: string
+          enum: [ok, error]
+          description: 서비스 전체 상태. `db`가 error면 이 값도 error다.
+        db:
+          type: string
+          enum: [ok, error]
+          description: DB 커넥션 확인 결과(`SELECT 1`)
+
     ErrorResponse:
       type: object
       required: [message]
