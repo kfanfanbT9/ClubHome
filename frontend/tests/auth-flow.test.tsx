@@ -103,10 +103,11 @@ describe('보호 경로 가드', () => {
 
   it('로그인 상태면 보호 경로가 열린다', () => {
     로그인상태로();
-    renderWithProviders(<App />, '/me');
+    renderWithProviders(<App />, '/admin');
 
-    // 화면 자체는 아직 없으므로 "준비 중"이 뜬다 — 가드를 통과했다는 뜻이다.
-    expect(제목()).toBe('준비 중인 화면입니다');
+    // 어떤 화면이 뜨는지는 화면 이슈마다 달라진다. 가드의 관심사는
+    // "로그인으로 튕기지 않았다"뿐이므로 그것만 확인한다.
+    expect(제목()).not.toBe('로그인');
   });
 
   it('쿼리 문자열이 붙은 보호 경로도 로그인 후 그대로 복원된다', async () => {
@@ -119,7 +120,7 @@ describe('보호 경로 가드', () => {
     입력하기('비밀번호', 'password123');
     fireEvent.click(screen.getByRole('button', { name: '로그인' }));
 
-    await waitFor(() => expect(제목()).toBe('준비 중인 화면입니다'));
+    await waitFor(() => expect(제목()).not.toBe('로그인'));
     // pathname만 넘기면 ?page=3 이 사라져 목록 3페이지를 보려던 사용자가 1페이지로 떨어진다.
     expect(screen.getByText(/page=3/)).toBeInTheDocument();
   });
@@ -136,7 +137,8 @@ describe('보호 경로 가드', () => {
     fireEvent.click(screen.getByRole('button', { name: '로그인' }));
 
     // 홈이 아니라 원래 목적지로 가야 한다.
-    await waitFor(() => expect(제목()).toBe('준비 중인 화면입니다'));
+    await waitFor(() => expect(제목()).not.toBe('로그인'));
+    expect(제목()).not.toBe('색소폰 동호회 “색연필”에 오신 것을 환영합니다');
   });
 });
 
@@ -144,19 +146,21 @@ describe('로그아웃', () => {
   it('로그아웃하면 토큰이 폐기되고 보호 경로가 다시 막힌다', async () => {
     fetchMock.mockImplementation(항상응답(204));
     로그인상태로();
-    renderWithProviders(<App />, '/me');
+    renderWithProviders(<App />, '/admin');
 
-    expect(제목()).toBe('준비 중인 화면입니다');
+    expect(제목()).not.toBe('로그인');
 
     fireEvent.click(screen.getByRole('button', { name: '로그아웃' }));
 
     await waitFor(() => expect(useAuthStore.getState().accessToken).toBeNull());
     // 로그아웃 요청은 확인 응답용이고 폐기의 실체는 클라이언트 토큰 삭제다.
-    expect((fetchMock.mock.calls[0] as [string])[0]).toContain('/api/auth/logout');
+    expect(
+      fetchMock.mock.calls.some(([url]) => (url as string).includes('/api/auth/logout')),
+    ).toBe(true);
     await waitFor(() => expect(제목()).toBe('색소폰 동호회 “색연필”에 오신 것을 환영합니다'));
 
     // 로그아웃 뒤에 보호 경로로 다시 들어가면 막힌다.
-    renderWithProviders(<App />, '/me');
+    renderWithProviders(<App />, '/admin');
     expect(screen.getAllByRole('heading', { level: 1 }).pop()?.textContent).toBe('로그인');
   });
 
@@ -184,9 +188,9 @@ describe('새로고침 후 로그인 유지', () => {
     );
     useAuthStore.persist.rehydrate();
 
-    renderWithProviders(<App />, '/me');
+    renderWithProviders(<App />, '/admin');
 
-    expect(제목()).toBe('준비 중인 화면입니다');
+    expect(제목()).not.toBe('로그인');
     expect(screen.getByRole('button', { name: '로그아웃' })).toBeInTheDocument();
   });
 });

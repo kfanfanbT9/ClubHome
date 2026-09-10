@@ -3,6 +3,7 @@ import Layout from './components/layout/Layout';
 import RequireAuth from './components/layout/RequireAuth';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import MyPage from './pages/MyPage';
 import NotReadyPage from './pages/NotReadyPage';
 import SignupPage from './pages/SignupPage';
 
@@ -26,7 +27,7 @@ export default function App() {
         <Route element={<RequireAuth />}>
           <Route path="/boards" element={<NotReadyPage />} />
           <Route path="/practice-rooms" element={<NotReadyPage />} />
-          <Route path="/me" element={<NotReadyPage />} />
+          <Route path="/me" element={<MyPage />} />
           <Route path="/admin" element={<NotReadyPage />} />
         </Route>
 

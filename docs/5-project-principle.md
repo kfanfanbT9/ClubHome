@@ -15,6 +15,7 @@
 | 0.7 | 2026-09-10 | §5 선택 키에 `CORS_ORIGIN` 추가(정확 일치·와일드카드 미지원·미설정 시 전부 차단). "CORS/HTTPS" 항목이 요구하던 환경변수의 실제 키 이름을 명시하고, Bearer 토큰 인증이므로 `Access-Control-Allow-Credentials`를 열지 않는다는 결정도 함께 기록 | Kang SangSoo |
 | 0.8 | 2026-09-10 | §8 문서 관리 원칙 신설: 문서 간 참조에 버전 번호를 쓰지 않기로 결정. 종전에는 §0 참조에 버전을 박아, 문서 하나를 고치면 그 문서를 가리키는 모든 문서의 표기와 버전이 연쇄로 올라갔다(선택 키 한 줄 추가에 문서 6개가 움직인 사례). 이 문서 §0의 참조에서도 버전 표기를 제거 | Kang SangSoo |
 | 0.9 | 2026-09-10 | 코드베이스 실측 결과 반영: §7 트리에 누락돼 있던 `middlewares/cors.js`·`utils/logger.js`·`tests/e2e-scenarios.sh` 추가. §5의 "로그는 콘솔 출력 수준으로 충분"을 실제 구현대로 **로깅** 항목으로 분리(네 지점, stdout/stderr 분리, 본문·인증 헤더 미기록 기준)하고, **헬스체크** 항목을 분리해 DB 실패 시 503 응답을 명시 | Kang SangSoo |
+| 0.14 | 2026-09-10 | FE-04 구현 반영. §6 트리에 `components/common/ReadOnlyField.tsx`와 `lib/format.ts` 추가. 쿼리 키를 각 `features/*/use*Queries.ts`에 모아 두는 관례(문자열을 화면에 흩뿌리면 invalidate가 오타로 빗나간다)도 함께 시작했다. 원칙 본문 변경 없음 | Kang SangSoo |
 | 0.13 | 2026-09-10 | FE-03 구현 반영. §6 트리에 `components/layout/RequireAuth.tsx`, `components/common/Field.tsx`, `lib/validation.ts` 추가. `components/common/`은 "같은 패턴이 3회 반복된 뒤에 만든다"는 단서를 지켜 첫 입주자가 생긴 경우다 — 라벨+입력창+오류 한 벌이 가입·로그인 폼에서 일곱 번 반복됐다. 원칙 본문 변경 없음 | Kang SangSoo |
 | 0.12 | 2026-09-10 | FE-02 구현 반영. §6의 "스타일은 `styles/tokens.css` 파일 하나로 끝낸다"를 **`styles/` 아래 두 파일**(`tokens.css` 값 + `app.css` 적용)로 고쳤다 — 인라인 `style` 속성으로는 미디어쿼리와 `:hover`를 쓸 수 없어, 반응형 전환(768px)과 hover가 요구사항에 있는 이상 일반 CSS 파일이 반드시 필요했다. 값과 사용처를 나눠 두면 값을 고칠 때와 화면을 고칠 때 건드릴 파일이 섞이지 않는다. 파일을 더 늘리지 않고 화면이 늘어도 `app.css`에 절을 추가한다는 단서도 함께 명시. §6 트리에 `components/layout/`의 실제 파일 3개 추가 | Kang SangSoo |
 | 0.11 | 2026-09-10 | FE-01 착수 결정 반영. §4에서 "테스트 러너는 `node --test` 하나만 쓴다 … 별도 프레임워크를 추가하지 않는다"를 **스택별로 하나씩**으로 고쳤다 — Node 내장 러너에는 DOM과 컴포넌트 렌더링 수단이 없어 프론트엔드 로직을 검증할 방법이 없었고, 그 결과 이 조항이 "프론트는 테스트하지 않는다"와 같은 뜻이 되어 있었다. 프론트엔드는 Vitest + React Testing Library를 쓰고 `src/` 커버리지 80%를 `vite.config.ts`의 `coverage.thresholds`로 강제한다. 자동화 대상도 "UI 세부 스타일 제외"에서 "눈으로 보기 어려운 로직(토큰 재발급·슬롯 판정·권한별 노출·오류 매핑)"으로 구체화했다. 함께 발견한 오류 정정: §4가 "E2E는 범위 외"라고 단정하고 있었으나 `backend/tests/e2e-scenarios.sh`가 이미 S-01~S-08을 자동화하고 있어, API E2E는 있고 브라우저 UI E2E만 범위 외임을 명시했다. §6 트리에 `lib/queryClient.ts`·`tests/`·`vite.config.ts`·`.env.example`을 추가하고 `client.ts` 설명의 "axios/fetch"를 실제 구현대로 fetch로 정정 | Kang SangSoo |
@@ -148,13 +149,14 @@ frontend/
 │   │   │   ├── NavMenu.tsx       # 메뉴 링크 목록 (props만 받는 UI 조각)
 │   │   │   └── RequireAuth.tsx   # 로그인 필요 경로를 감싸는 부모 라우트
 │   │   └── common/
-│   │       └── Field.tsx         # 라벨 + 입력창 + 오류 문구 한 벌
+│   │       ├── Field.tsx         # 라벨 + 입력창 + 오류 문구 한 벌
+│   │       └── ReadOnlyField.tsx # 수정할 수 없는 값 한 줄 (테두리 없음)
 │   ├── features/                 # 도메인 단위 폴더 (API 훅 + 타입 + 스토어)
 │   │   ├── auth/
 │   │   │   ├── authStore.ts      # Zustand: 로그인 사용자, 토큰
 │   │   │   └── useAuth.ts        # 로그인/로그아웃 mutation
 │   │   ├── member/
-│   │   │   └── useMemberQueries.ts
+│   │   │   └── useMemberQueries.ts  # 본인 정보 조회·수정 + 쿼리 키
 │   │   ├── board/
 │   │   │   └── useBoardQueries.ts
 │   │   ├── practiceRoom/
@@ -169,6 +171,7 @@ frontend/
 │   │   └── app.css               # 그 변수를 쓰는 컴포넌트 스타일 (스타일 가이드 §6)
 │   ├── types/                     # 도메인 타입 (Member, Board, Post, PracticeRoom, Reservation)
 │   └── lib/                       # 날짜 포맷 등 순수 유틸
+│       ├── format.ts             # 표시용 날짜 포맷
 │       ├── queryClient.ts        # QueryClient 생성 + 재시도 정책
 │       └── validation.ts         # 최소 클라이언트 검증 (이메일 형식 등)
 ├── tests/                          # Vitest. 파일명은 검증 대상과 같게 둔다(client.test.ts 등)
