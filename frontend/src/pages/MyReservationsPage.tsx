@@ -13,11 +13,14 @@ function 예약줄({
   연습실이름,
   onCancel,
   취소중,
+  취소오류,
 }: {
   reservation: Reservation;
   연습실이름: string;
   onCancel: () => void;
   취소중: boolean;
+  /** 이 예약의 취소가 거절된 이유. 다른 줄의 실패를 여기 보여주지 않는다. */
+  취소오류?: string;
 }) {
   return (
     <li className="res-row">
@@ -45,6 +48,14 @@ function 예약줄({
           </span>
         )}
       </span>
+
+      {/* 거절 사유는 서버 문구를 그대로 보여준다 —
+          403(이미 시작된 예약·타인 예약), 400(이미 취소·완료된 예약). */}
+      {취소오류 && (
+        <p className="res-row__error" role="alert">
+          {취소오류}
+        </p>
+      )}
     </li>
   );
 }
@@ -75,6 +86,8 @@ export default function MyReservationsPage() {
     if (값) 갱신.set('roomId', 값);
     else 갱신.delete('roomId');
     setSearchParams(갱신);
+    // 목록이 바뀌면 직전 실패 안내는 화면에 없는 예약을 가리키게 된다.
+    if (cancel.isError) cancel.reset();
   };
 
   return (
@@ -112,14 +125,6 @@ export default function MyReservationsPage() {
         </p>
       )}
 
-      {/* 취소 실패 사유는 서버 문구를 그대로 보여준다 —
-          403(이미 시작된 예약·타인 예약), 400(이미 취소·완료된 예약). */}
-      {cancel.isError && (
-        <p className="notice notice--error" role="alert">
-          {cancel.error.message}
-        </p>
-      )}
-
       {reservations.data && reservations.data.length === 0 && (
         <p className="empty">
           {필터 ? '이 연습실의 예약 내역이 없습니다.' : '예약 내역이 없습니다.'}
@@ -143,6 +148,11 @@ export default function MyReservationsPage() {
                 reservation={reservation}
                 연습실이름={연습실이름찾기(rooms.data, reservation.practiceRoomId)}
                 취소중={cancel.isPending && cancel.variables?.id === reservation.id}
+                취소오류={
+                  cancel.isError && cancel.variables?.id === reservation.id
+                    ? cancel.error.message
+                    : undefined
+                }
                 onCancel={() => cancel.mutate(reservation)}
               />
             ))}

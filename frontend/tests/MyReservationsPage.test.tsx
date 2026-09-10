@@ -264,3 +264,37 @@ describe('예약 취소', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('이미 취소된 예약입니다.');
   });
 });
+
+describe('리뷰에서 발견한 문제', () => {
+  it('취소 실패 안내가 그 예약 줄에 붙는다', async () => {
+    목설정([시작전예약, { ...시작전예약, id: 21, reservationDate: '2094-09-10' }], {
+      status: 403,
+      body: { message: '이미 시작된 예약은 취소할 수 없습니다.' },
+    });
+    렌더();
+
+    await 행이생길때까지();
+    // 두 번째 줄의 취소를 누른다
+    fireEvent.click(screen.getAllByRole('button', { name: '취소' })[1]);
+    fireEvent.click(screen.getAllByRole('button', { name: '취소' })[1]);
+
+    const 안내 = await screen.findByRole('alert');
+    // 여러 줄이 있을 때 화면 맨 위 한 줄로만 알려주면 어느 예약이 실패한 건지 알 수 없다.
+    expect(안내.closest('.res-row')).not.toBeNull();
+    expect(안내.closest('.res-row')?.textContent).toContain('2094-09-10');
+  });
+
+  it('필터를 바꾸면 이전 취소 실패 안내가 사라진다', async () => {
+    목설정([시작전예약], { status: 403, body: { message: '이미 시작된 예약은 취소할 수 없습니다.' } });
+    렌더();
+
+    await 행이생길때까지();
+    fireEvent.click(screen.getByRole('button', { name: '취소' }));
+    fireEvent.click(screen.getAllByRole('button', { name: '취소' })[0]);
+    await screen.findByRole('alert');
+
+    fireEvent.change(screen.getByLabelText('연습실 필터'), { target: { value: '1' } });
+
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+  });
+});

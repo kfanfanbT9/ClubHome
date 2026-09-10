@@ -941,3 +941,11 @@ a.button {
     margin-top: 0;
   }
 }
+
+/* 취소 거절 사유 — 그 예약 줄 안에 둔다 */
+.res-row__error {
+  grid-column: 1 / -1;
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
