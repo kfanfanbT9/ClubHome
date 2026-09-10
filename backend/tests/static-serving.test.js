@@ -152,3 +152,40 @@ test('빌드 전 디렉토리를 가리키면 404로 떨어진다', () => {
 
   fs.rmSync(빈디렉토리, { recursive: true, force: true });
 });
+
+test('상대 경로 STATIC_DIR은 작업 디렉토리가 달라도 같은 곳을 가리킨다', () => {
+  // backend 안에 만든다 — os.tmpdir() 은 드라이브가 달라 path.relative 가
+  // 절대 경로를 돌려주므로 상대 경로 경우를 재현하지 못한다(Windows).
+  const dist = path.join(백엔드경로, '.tmp-static-test');
+  fs.mkdirSync(dist, { recursive: true });
+  fs.writeFileSync(path.join(dist, 'index.html'), '<!doctype html><title>색연필</title>');
+  const 상대경로 = path.relative(백엔드경로, dist);
+
+  const 스크립트 = `
+    const app = require(${JSON.stringify(path.join(백엔드경로, 'src', 'app.js'))});
+    const server = app.listen(0, async () => {
+      const response = await fetch('http://127.0.0.1:' + server.address().port + '/');
+      console.log(JSON.stringify({ status: response.status }));
+      server.close(() => process.exit(0));
+    });
+  `;
+
+  // 일부러 backend 가 아닌 곳에서 띄운다 — systemd 의 WorkingDirectory 가
+  // backend 가 아닐 때 생기는 상황이다.
+  const 결과 = spawnSync(process.execPath, ['-e', 스크립트], {
+    cwd: os.tmpdir(),
+    env: { ...process.env, LOG_LEVEL: 'silent', STATIC_DIR: 상대경로 },
+    encoding: 'utf8',
+  });
+
+  assert.equal(결과.status, 0, `자식 프로세스 실패: ${결과.stderr}`);
+  const 응답 = JSON.parse(결과.stdout.trim().split('\n').pop());
+  assert.equal(
+    응답.status,
+    200,
+    'cwd 기준으로 풀면 상대 경로가 엉뚱한 곳을 가리켜 정적 파일을 못 찾는다'
+  );
+
+  // backend 안에 만들었으므로 반드시 지운다
+  fs.rmSync(dist, { recursive: true, force: true });
+});

@@ -56,7 +56,14 @@ app.use(routes);
 const staticDir = process.env.STATIC_DIR;
 
 if (staticDir) {
-  const 정적경로 = path.resolve(staticDir);
+  /**
+   * 상대 경로는 **백엔드 루트 기준**으로 푼다. `process.cwd()` 기준으로 풀면
+   * `../frontend/dist`가 서버를 어디서 띄웠는지에 따라 다른 곳을 가리킨다 —
+   * systemd 의 `WorkingDirectory`가 backend 가 아니면 정적 파일을 못 찾는다.
+   * `.env`에 적힌 `../frontend/dist`가 "backend 옆의 frontend"를 뜻하도록 고정한다.
+   * 절대 경로는 그대로 쓰인다.
+   */
+  const 정적경로 = path.resolve(__dirname, '..', staticDir);
   app.use(express.static(정적경로));
 
   /**
