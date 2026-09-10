@@ -15,6 +15,7 @@
 | 0.7 | 2026-09-10 | §5 선택 키에 `CORS_ORIGIN` 추가(정확 일치·와일드카드 미지원·미설정 시 전부 차단). "CORS/HTTPS" 항목이 요구하던 환경변수의 실제 키 이름을 명시하고, Bearer 토큰 인증이므로 `Access-Control-Allow-Credentials`를 열지 않는다는 결정도 함께 기록 | Kang SangSoo |
 | 0.8 | 2026-09-10 | §8 문서 관리 원칙 신설: 문서 간 참조에 버전 번호를 쓰지 않기로 결정. 종전에는 §0 참조에 버전을 박아, 문서 하나를 고치면 그 문서를 가리키는 모든 문서의 표기와 버전이 연쇄로 올라갔다(선택 키 한 줄 추가에 문서 6개가 움직인 사례). 이 문서 §0의 참조에서도 버전 표기를 제거 | Kang SangSoo |
 | 0.9 | 2026-09-10 | 코드베이스 실측 결과 반영: §7 트리에 누락돼 있던 `middlewares/cors.js`·`utils/logger.js`·`tests/e2e-scenarios.sh` 추가. §5의 "로그는 콘솔 출력 수준으로 충분"을 실제 구현대로 **로깅** 항목으로 분리(네 지점, stdout/stderr 분리, 본문·인증 헤더 미기록 기준)하고, **헬스체크** 항목을 분리해 DB 실패 시 503 응답을 명시 | Kang SangSoo |
+| 0.20 | 2026-09-10 | 구현된 소스와 트리를 대조해 현행화: §6 `pages/`를 실제 파일 16개(경로 주석 포함)로 교체 — 종전 트리에는 존재하지 않는 `PracticeRoomReservationPage.tsx`가 예시로 남아 있었고 실제 파일 대부분이 빠져 있었다. `types/index.ts`·`vite-env.d.ts`와 테스트 헬퍼 2개(`renderWithProviders.tsx`, `fetchMock.ts`)도 추가. §7 `tests/`에 자식 프로세스로 기동하는 두 테스트(`app.test.js`, `static-serving.test.js`) 명시. §8에서 와이어프레임 ↔ `docs/wireframes/*.svg` 쌍을 해제 — SVG 18개가 설계 시점 배치에서 갱신이 멈춰 구현과 어긋나 삭제했고, 구현 후의 짝을 `frontend/src/pages/`로 규정했다. "갱신되지 않는 산출물은 쌍을 해제하거나 지운다"는 일반 규칙도 함께 추가 | Kang SangSoo |
 | 0.19 | 2026-09-10 | IT-02 배포 준비 반영. §5 선택 키에 `STATIC_DIR` 추가. 단일 서버 배포(PRD §5)인데 프론트 빌드 결과를 내보낼 수단이 없어, Express가 함께 서빙할 수 있게 했다 — 같은 출처가 되므로 `CORS_ORIGIN`이 필요 없어진다. 미설정이 기본값(끔)이라는 관례는 `ENABLE_API_DOCS`·`CORS_ORIGIN`과 같다. SPA 폴백에서 `/api/`와 비GET을 제외하는 근거도 함께 기록 | Kang SangSoo |
 | 0.18 | 2026-09-10 | FE-09 구현 반영. §6 트리에 `components/layout/RequireAdmin.tsx`와 `pages/admin/AdminHomePage.tsx` 추가. 관리자 훅은 이슈 FE-09 요구대로 `features/admin/useAdminQueries.ts` 한 파일에 모았다 — 관리자 화면끼리 서로의 캐시를 무효화하는 일이 많아 키와 무효화 규칙을 한눈에 봐야 한다. 원칙 본문 변경 없음. FE-01~FE-09로 프론트엔드 화면 전체가 구현됐다 | Kang SangSoo |
 | 0.17 | 2026-09-10 | FE-08 구현 반영. §6 트리에 `features/practiceRoom/reservationRules.ts`와 `components/common/ConfirmButton.tsx` 추가. 후자는 "같은 패턴이 3회 반복된 뒤에 공통화한다"는 단서보다 이르게(2회) 합친 경우다 — 삭제·취소 확인은 한쪽에만 빠지면 곧바로 사고가 되는 종류라 판단이 다르다. 원칙 본문 변경 없음 | Kang SangSoo |
@@ -139,12 +140,21 @@ frontend/
 ├── src/
 │   ├── main.tsx
 │   ├── App.tsx                 # 라우팅 정의
-│   ├── pages/                  # 화면 단위 (URL과 1:1)
-│   │   ├── LoginPage.tsx
-│   │   ├── BoardListPage.tsx
-│   │   ├── PostDetailPage.tsx
-│   │   ├── PracticeRoomReservationPage.tsx
+│   ├── pages/                  # 화면 단위 (URL과 1:1, 와이어프레임 §1 대응표 참고)
+│   │   ├── HomePage.tsx              # /
+│   │   ├── SignupPage.tsx            # /signup
+│   │   ├── LoginPage.tsx             # /login
+│   │   ├── MyPage.tsx                # /me
+│   │   ├── BoardListPage.tsx         # /boards
+│   │   ├── PostListPage.tsx          # /boards/:boardId/posts
+│   │   ├── PostFormPage.tsx          # 작성·수정 두 경로가 같은 컴포넌트를 쓴다
+│   │   ├── PostDetailPage.tsx        # /posts/:postId
+│   │   ├── PracticeRoomPage.tsx      # /practice-rooms (하루 예약현황 + 슬롯 선택)
+│   │   ├── ReservationConfirmPage.tsx # /practice-rooms/:roomId/reserve
+│   │   ├── MyReservationsPage.tsx    # /me/reservations
+│   │   ├── NotReadyPage.tsx          # 없는 경로(*) 404 화면
 │   │   └── admin/
+│   │       ├── AdminHomePage.tsx     # /admin (아래 3개로 가는 입구)
 │   │       ├── MemberGradeAdminPage.tsx
 │   │       ├── BoardAdminPage.tsx
 │   │       └── PracticeRoomAdminPage.tsx
@@ -179,13 +189,17 @@ frontend/
 │   ├── styles/
 │   │   ├── tokens.css            # 색상·타이포·간격 CSS 변수 (스타일 가이드 §3~§5)
 │   │   └── app.css               # 그 변수를 쓰는 컴포넌트 스타일 (스타일 가이드 §6)
-│   ├── types/                     # 도메인 타입 (Member, Board, Post, PracticeRoom, Reservation)
-│   └── lib/                       # 날짜 포맷 등 순수 유틸
-│       ├── format.ts             # 표시용 날짜 포맷
-│       ├── queryClient.ts        # QueryClient 생성 + 재시도 정책
-│       └── validation.ts         # 최소 클라이언트 검증 (이메일 형식 등)
+│   ├── types/
+│   │   └── index.ts              # 도메인 타입 (Member, Board, Post, PracticeRoom, Reservation)
+│   ├── lib/                       # 날짜 포맷 등 순수 유틸
+│   │   ├── format.ts             # 표시용 날짜 포맷
+│   │   ├── queryClient.ts        # QueryClient 생성 + 재시도 정책
+│   │   └── validation.ts         # 최소 클라이언트 검증 (이메일 형식 등)
+│   └── vite-env.d.ts             # import.meta.env 타입 선언 (Vite 제공)
 ├── tests/                          # Vitest. 파일명은 검증 대상과 같게 둔다(client.test.ts 등)
-│   └── setup.ts                    # jest-dom 매처 등록
+│   ├── setup.ts                    # jest-dom 매처 등록 + afterEach(cleanup)
+│   ├── renderWithProviders.tsx     # MemoryRouter + QueryClientProvider로 감싸 렌더 (queryClient도 반환)
+│   └── fetchMock.ts                # fetch 스텁 헬퍼 (호출마다 새 Response를 만든다)
 ├── index.html
 ├── package.json
 ├── vite.config.ts                  # Vite + Vitest 설정(커버리지 임계값 포함)
@@ -256,7 +270,9 @@ backend/
 │   ├── board-api.test.js              # 원칙 §4 항목 2: 등급 기반 게시판 접근 제어
 │   ├── reservation-service.test.js    # 원칙 §4 항목 3: 예약 중복 방지
 │   ├── post-api.test.js               # 원칙 §4 항목 4: 소유권 검사
-│   ├── (그 외 엔드포인트별 *-api.test.js)
+│   ├── app.test.js                    # CORS·API 문서 스위치 (자식 프로세스로 기동)
+│   ├── static-serving.test.js         # STATIC_DIR 정적 서빙·SPA 폴백 (자식 프로세스로 기동)
+│   ├── (그 외 엔드포인트별 *-api.test.js, *-service.test.js, auth-utils/auth-middleware)
 │   └── e2e-scenarios.sh               # 사용자 시나리오 S-01~S-08 curl E2E
 │                                      #   (`npm test`에 포함되지 않는다 - 별도 실행)
 ├── .env.example
@@ -275,4 +291,6 @@ backend/
   - **변경 이력 표의 과거 기록은 그대로 둔다.** "ERD v0.5→v0.6 정정"처럼 그 시점의 사실을 남긴 문장은 역사이며, 소급해 고치면 이력의 의미가 사라진다.
   - 특정 시점의 내용을 가리켜야 할 때만 예외적으로 버전을 적고, 왜 그 버전인지 함께 쓴다.
 - **각 문서는 수정될 때마다 자기 변경 이력 표에 한 줄을 추가하고 자기 버전을 올린다.** 다른 문서의 변경 때문에 올리는 일은 위 규칙에 따라 더 이상 발생하지 않는다.
-- **`docs/`의 문서와 그 문서가 규정하는 산출물은 함께 갱신한다.** ERD ↔ `schema.sql`, 와이어프레임 ↔ `docs/wireframes/*.svg`, API 명세 ↔ `backend/swagger.yaml`이 각각 한 쌍이다.
+- **`docs/`의 문서와 그 문서가 규정하는 산출물은 함께 갱신한다.** ERD(`7-erd.md`) ↔ `docs/schema.sql`, 스타일 가이드(`9-style.md`) ↔ `docs/designs/*.html`(확정 시안)과 `frontend/src/styles/`, API 명세 ↔ `backend/swagger.yaml`이 각각 한 쌍이다.
+  - **와이어프레임(`4-wireframes.md`) ↔ `docs/wireframes/*.svg` 쌍은 해제했다.** SVG 18개는 설계 시점 배치를 담은 채 갱신이 멈춰 구현과 어긋났고, 구현 완료 시점에 삭제했다(내용은 최초 설계 커밋에 남아 있다 — 와이어프레임 §0 참고). 배치를 확인할 곳은 실행되는 화면과 문서의 ASCII 다이어그램이므로, 손으로 그린 도면을 세 번째 사본으로 유지하지 않는다. 구현 후 이 문서와 짝을 이루는 것은 `frontend/src/pages/`이며, **화면을 고치면 해당 화면 절의 "구현 결과" 항목을 함께 갱신한다.**
+  - 이 사례가 일반 규칙이다: **어떤 산출물이 문서와 함께 갱신되지 않는다는 것이 드러나면, 어긋난 사본을 남겨두지 말고 쌍을 해제하거나 산출물을 지운다.** 갱신되지 않는 사본은 참조하는 사람을 잘못된 기준으로 이끈다.
