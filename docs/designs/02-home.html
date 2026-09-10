@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>색연필 - 홈</title>
+
+<!--
+  와이어프레임 2번(홈 화면) 확정 디자인 — 시안 D "강조 밴드"
+  근거: docs/4-wireframes.md 2번 / docs/9-style.md / 8-plan.md FE-02
+
+  이 파일은 FE-02 구현 시 참조하는 시안이다. 아래 :root 블록이
+  frontend/src/styles/tokens.css 의 씨앗이며, 값은 9-style.md §3~§5와 같다.
+
+  단일 라이트 테마로 commit한다(9-style.md §8: 다크 모드 범위 외).
+  그래서 prefers-color-scheme 분기를 두지 않되, 배경과 모든 색을
+  토큰으로 명시해 어떤 환경에서도 같은 화면이 나오게 한다.
+
+  화면 우상단의 "미리보기 상태" 선택은 이 시안 파일에만 있는 장치다.
+  로그인 상태에 따라 메뉴가 달라지는 FE-02 완료조건을 코드 수정 없이
+  확인하기 위한 것이며, 실제 구현에는 authStore의 상태가 들어간다.
+-->
+
+<style>
+/* ============================================================
+   1. 토큰 — docs/9-style.md §3~§5
+   ============================================================ */
+:root {
+  /* 색 */
+  --color-text:         #1A1A1A;
+  --color-text-muted:   #5C6370;
+  --color-text-subtle:  #8A9099;
+  --color-surface:      #FFFFFF;
+  --color-bg:           #F7F8F9;
+  --color-border:       #E3E6EA;
+  --color-accent:       #2563A8;
+  --color-accent-strong:#1B4A80;
+  --color-accent-tint:  rgba(37, 99, 168, 0.06);
+  --color-danger:       #C0392B;
+  --color-success:      #2E7D52;
+  --color-warning:      #B26A00;
+
+  /* 타이포 */
+  --font-sans: "Noto Sans KR", system-ui, -apple-system, "Malgun Gothic", sans-serif;
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.5rem;
+  --text-2xl:  2rem;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-bold:   700;
+  --leading-tight:  1.3;
+  --leading-normal: 1.6;
+
+  /* 간격·형태 */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-pill: 999px;
+  --container:   1200px;
+  --nav-height:  56px;
+}
+
+/* ============================================================
+   2. 기본
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  letter-spacing: -0.02em;
+}
+
+a { color: inherit; text-decoration: none; }
+a:focus-visible, button:focus-visible, select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   3. 상단 네비게이션 — 모바일 우선, 768px 이상에서 가로 메뉴바
+   ============================================================ */
+.nav {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.nav__bar {
+  max-width: var(--container);
+  margin: 0 auto;
+  height: var(--nav-height);
+  padding: 0 var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+.nav__mark {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.03em;
+}
+.nav__menu { display: none; }
+.nav__auth { margin-left: auto; font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-text-muted); }
+
+/* 햄버거 — 모바일에서만 보인다 */
+.nav__burger {
+  margin-left: auto;
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  background: none; border: none; cursor: pointer;
+  font-size: 20px; line-height: 1; color: var(--color-text);
+  font-family: inherit;
+}
+/* 펼친 메뉴(모바일) */
+.nav__sheet { display: none; border-top: 1px solid var(--color-border); }
+.nav__sheet[data-open="true"] { display: block; }
+.nav__sheet a {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+.nav__sheet a:last-child { border-bottom: none; }
+.nav__sheet a.is-admin { color: var(--color-accent); }
+
+@media (min-width: 768px) {
+  .nav__burger, .nav__sheet { display: none !important; }
+  .nav__menu {
+    display: flex;
+    gap: var(--space-6);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-text-muted);
+  }
+  .nav__menu a.is-admin { color: var(--color-accent); }
+}
+
+/* ============================================================
+   4. 강조 밴드 — 시안 D의 핵심
+   ============================================================ */
+.band {
+  background: var(--color-accent-tint);
+  border-bottom: 1px solid var(--color-border);
+}
+.band__inner {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4);
+}
+.band__title {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.band__sub {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 768px) {
+  .band__inner { padding: var(--space-12) var(--space-4); }
+  .band__title { font-size: var(--text-2xl); }
+  .band__sub { font-size: var(--text-base); }
+}
+
+/* ============================================================
+   5. 바로가기 타일 — 1px 간격으로 맞붙인다
+   ============================================================ */
+.tiles {
+  max-width: var(--container);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--color-border);
+}
+.tile {
+  background: var(--color-surface);
+  padding: var(--space-6) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.tile__name {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.03em;
+}
+.tile__desc {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.tile__go {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-accent);
+}
+.tile:hover .tile__go { color: var(--color-accent-strong); }
+.tile__go { transition: color .15s ease; }
+
+@media (min-width: 768px) {
+  .tiles { grid-template-columns: 1fr 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile__go { transition: none; }
+}
+
+/* ============================================================
+   6. 미리보기 상태 선택 — 이 시안 파일 전용. 구현에는 없다.
+   ============================================================ */
+.preview {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, .08);
+}
+.preview select {
+  font-family: inherit;
+  font-size: var(--text-xs);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
+}
+.preview__note { display: none; }
+@media (min-width: 768px) { .preview__note { display: inline; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav__bar">
+    <a class="nav__mark" href="#home">색연필</a>
+
+    <span class="nav__menu">
+      <a href="#board">게시판</a>
+      <a href="#room">연습실예약</a>
+      <a href="#me">마이페이지</a>
+      <a class="is-admin" href="#admin" data-admin-only hidden>관리자</a>
+    </span>
+
+    <span class="nav__auth" data-auth-label>로그인</span>
+
+    <!-- 아이콘만 있는 버튼이므로 aria-label로 이름을 준다. 시각적으로 숨긴 텍스트를
+         hidden으로 두면 보조기기에서도 사라져 이름 없는 버튼이 된다. -->
+    <button class="nav__burger" type="button" aria-label="메뉴" aria-expanded="false" aria-controls="navSheet" data-burger>
+      <span aria-hidden="true">≡</span>
+    </button>
+  </div>
+
+  <div class="nav__sheet" id="navSheet" data-open="false">
+    <a href="#board">게시판</a>
+    <a href="#room">연습실예약</a>
+    <a href="#me">마이페이지</a>
+    <a class="is-admin" href="#admin" data-admin-only hidden>관리자</a>
+    <a href="#auth" data-auth-label>로그인</a>
+  </div>
+</nav>
+
+<header class="band">
+  <div class="band__inner">
+    <h1 class="band__title">색소폰 동호회 “색연필”에 오신 것을 환영합니다</h1>
+    <p class="band__sub" data-greeting>게시판에서 공지를 확인하고, 연습실을 30분 단위로 예약하세요.</p>
+  </div>
+</header>
+
+<main>
+  <div class="tiles">
+    <a class="tile" href="#board">
+      <h2 class="tile__name">게시판</h2>
+      <p class="tile__desc">공지사항 · 자유게시판 · 정회원 게시판 · 운영진 전용</p>
+      <span class="tile__go">바로가기 →</span>
+    </a>
+    <a class="tile" href="#room">
+      <h2 class="tile__name">연습실 예약</h2>
+      <p class="tile__desc">1연습실 09:00–22:00 · 30분 단위</p>
+      <span class="tile__go">바로가기 →</span>
+    </a>
+  </div>
+</main>
+
+<div class="preview">
+  <span class="preview__note" aria-hidden="true">미리보기 상태</span>
+  <select id="stateSelect" aria-label="미리보기 로그인 상태" data-state>
+    <option value="guest">비로그인</option>
+    <option value="member">로그인 · 정회원</option>
+    <option value="admin">로그인 · 운영진(관리자)</option>
+  </select>
+</div>
+
+<script>
+/* 햄버거 펼침·접힘 */
+(() => {
+  const burger = document.querySelector('[data-burger]');
+  const sheet = document.getElementById('navSheet');
+  burger.addEventListener('click', () => {
+    const open = sheet.dataset.open === 'true';
+    sheet.dataset.open = String(!open);
+    burger.setAttribute('aria-expanded', String(!open));
+    burger.firstElementChild.textContent = open ? '≡' : '✕';
+    burger.setAttribute('aria-label', open ? '메뉴' : '메뉴 닫기');
+  });
+})();
+
+/* 미리보기 상태 전환 — 이 시안 파일 전용.
+   구현에서는 authStore의 로그인 사용자·등급이 이 자리를 대신한다. */
+(() => {
+  const STATES = {
+    guest:  { auth: '로그인',   admin: false, greeting: '게시판에서 공지를 확인하고, 연습실을 30분 단위로 예약하세요.' },
+    member: { auth: '로그아웃', admin: false, greeting: '김색소 님, 오늘도 좋은 연습 되세요.' },
+    admin:  { auth: '로그아웃', admin: true,  greeting: '운영자 님, 관리자 메뉴에서 등급·게시판·연습실을 관리할 수 있습니다.' },
+  };
+  const select = document.querySelector('[data-state]');
+  const apply = (key) => {
+    const s = STATES[key];
+    document.querySelectorAll('[data-auth-label]').forEach((el) => { el.textContent = s.auth; });
+    document.querySelectorAll('[data-admin-only]').forEach((el) => { el.hidden = !s.admin; });
+    document.querySelector('[data-greeting]').textContent = s.greeting;
+  };
+  select.addEventListener('change', () => apply(select.value));
+  apply(select.value);
+})();
+</script>
+
+</body>
+</html>
