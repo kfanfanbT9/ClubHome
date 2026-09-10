@@ -5,6 +5,7 @@ import BoardListPage from './pages/BoardListPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import MyPage from './pages/MyPage';
+import MyReservationsPage from './pages/MyReservationsPage';
 import NotReadyPage from './pages/NotReadyPage';
 import PostDetailPage from './pages/PostDetailPage';
 import PostFormPage from './pages/PostFormPage';
@@ -38,7 +39,7 @@ export default function App() {
           <Route path="/posts/:postId/edit" element={<PostFormPage />} />
           <Route path="/practice-rooms" element={<PracticeRoomPage />} />
           <Route path="/practice-rooms/:roomId/reserve" element={<ReservationConfirmPage />} />
-          <Route path="/me/reservations" element={<NotReadyPage />} />
+          <Route path="/me/reservations" element={<MyReservationsPage />} />
           <Route path="/me" element={<MyPage />} />
           <Route path="/admin" element={<NotReadyPage />} />
         </Route>

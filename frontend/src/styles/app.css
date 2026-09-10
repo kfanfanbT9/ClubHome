@@ -836,3 +836,116 @@ a.button {
 .confirm-list dd {
   margin: 0;
 }
+
+/* ============================================================
+   내 예약 내역 (화면 11) — 모바일 카드 / PC 표
+   ============================================================ */
+.res-list {
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.res-list__head {
+  display: none;
+}
+
+.res-list__body {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* 모바일: 예약 1건 = 카드 1개 (연습실·날짜 / 시간대·상태 / 취소) */
+.res-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: var(--text-sm);
+}
+
+.res-row__room {
+  font-weight: var(--weight-medium);
+  font-size: var(--text-base);
+}
+
+.res-row__date,
+.res-row__time {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.res-row__date::before,
+.res-row__state::before {
+  content: '· ';
+  color: var(--color-text-subtle);
+}
+
+.res-row__manage {
+  grid-column: 1 / -1;
+  justify-self: end;
+  margin-top: var(--space-2);
+}
+
+/* 예약=강조색, 완료=중간 회색, 취소=흐린 회색 (9-style.md §6) */
+.res-row__state--reserved {
+  color: var(--color-accent);
+  font-weight: var(--weight-medium);
+}
+
+.res-row__state--completed {
+  color: var(--color-text-muted);
+}
+
+.res-row__state--canceled {
+  color: var(--color-text-subtle);
+}
+
+.res-row__none {
+  color: var(--color-text-subtle);
+}
+
+@media (min-width: 768px) {
+  .res-list__head,
+  .res-row {
+    display: grid;
+    grid-template-columns: 1fr 130px 140px 80px 160px;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .res-list__head {
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-text-muted);
+  }
+
+  .res-row__room {
+    font-size: var(--text-sm);
+  }
+
+  /* 표에서는 열이 이미 구분자 역할을 한다 */
+  .res-row__date::before,
+  .res-row__state::before {
+    content: none;
+  }
+
+  .res-row__manage {
+    grid-column: auto;
+    justify-self: start;
+    margin-top: 0;
+  }
+}
+
+/* 취소 거절 사유 — 그 예약 줄 안에 둔다 */
+.res-row__error {
+  grid-column: 1 / -1;
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}

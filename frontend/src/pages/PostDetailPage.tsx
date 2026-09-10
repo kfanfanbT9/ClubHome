@@ -1,48 +1,27 @@
-import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import ConfirmButton from '../components/common/ConfirmButton';
 import { useAuthStore } from '../features/auth/authStore';
 import { useBoard, useDeletePost, usePost } from '../features/board/useBoardQueries';
 import { formatDate } from '../lib/format';
 import type { Post } from '../types';
 
-/**
- * 삭제 확인. 브라우저 confirm 창을 쓰지 않고 버튼 자리에서 한 번 더 묻는다 —
- * 9-style.md §6이 "삭제·취소는 확인 절차를 먼저 거친다"고 요구하는 것을 지키면서,
- * 모달 컴포넌트를 미리 만들지 않는다(원칙 §1 조기 추상화 금지).
- */
 function 삭제버튼({ post, boardId }: { post: Post; boardId: number }) {
-  const [묻는중, set묻는중] = useState(false);
   const remove = useDeletePost(post.id, boardId);
   const navigate = useNavigate();
 
-  if (!묻는중) {
-    return (
-      <button type="button" className="button button--danger" onClick={() => set묻는중(true)}>
-        삭제
-      </button>
-    );
-  }
-
   return (
-    <span className="confirm">
-      <span className="confirm__ask">정말 삭제할까요?</span>
-      <button
-        type="button"
-        className="button button--danger"
-        disabled={remove.isPending}
-        onClick={() =>
-          remove.mutate(undefined, {
-            // 204라 돌아올 본문이 없다. 성공하면 목록으로 보낸다.
-            onSuccess: () => navigate(`/boards/${boardId}/posts`, { replace: true }),
-          })
-        }
-      >
-        {remove.isPending ? '삭제 중…' : '삭제'}
-      </button>
-      <button type="button" className="button button--quiet" onClick={() => set묻는중(false)}>
-        취소
-      </button>
-    </span>
+    <ConfirmButton
+      label="삭제"
+      question="정말 삭제할까요?"
+      진행중={remove.isPending}
+      진행중라벨="삭제 중…"
+      onConfirm={() =>
+        remove.mutate(undefined, {
+          // 204라 돌아올 본문이 없다. 성공하면 목록으로 보낸다.
+          onSuccess: () => navigate(`/boards/${boardId}/posts`, { replace: true }),
+        })
+      }
+    />
   );
 }
 

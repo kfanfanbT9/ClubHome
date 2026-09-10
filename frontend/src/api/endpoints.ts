@@ -18,4 +18,6 @@ export const endpoints = {
   post: (postId: number) => `/api/posts/${postId}`,
   practiceRooms: '/api/practice-rooms',
   roomReservations: (roomId: number) => `/api/practice-rooms/${roomId}/reservations`,
+  myReservations: '/api/members/me/reservations',
+  cancelReservation: (reservationId: number) => `/api/reservations/${reservationId}/cancel`,
 } as const;
