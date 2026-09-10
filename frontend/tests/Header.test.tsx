@@ -1,8 +1,11 @@
-import { fireEvent, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Header from '../src/components/layout/Header';
 import { useAuthStore } from '../src/features/auth/authStore';
+import { type FetchMock, fetch가로채기, 항상응답 } from './fetchMock';
 import { renderWithProviders } from './renderWithProviders';
+
+let fetchMock: FetchMock;
 
 function 로그인(isAdmin: boolean) {
   useAuthStore.getState().setAuth({
@@ -21,6 +24,13 @@ function 링크개수(이름: string) {
 beforeEach(() => {
   useAuthStore.setState({ accessToken: null, refreshToken: null, memberId: null, isAdmin: false });
   localStorage.clear();
+  fetchMock = fetch가로채기();
+  // 로그아웃은 확인 응답용 204를 부른다.
+  fetchMock.mockImplementation(항상응답(204));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('Header 메뉴 구성', () => {
@@ -107,21 +117,21 @@ describe('Header 햄버거 메뉴', () => {
 });
 
 describe('Header 로그아웃', () => {
-  it('로그아웃을 누르면 클라이언트 토큰이 폐기된다', () => {
+  it('로그아웃을 누르면 클라이언트 토큰이 폐기된다', async () => {
     로그인(false);
     renderWithProviders(<Header />);
 
     fireEvent.click(screen.getByRole('button', { name: '로그아웃' }));
 
     // 서버에 토큰 저장소가 없으므로 실제 폐기는 클라이언트 토큰 삭제다.
-    expect(useAuthStore.getState().accessToken).toBeNull();
+    await waitFor(() => expect(useAuthStore.getState().accessToken).toBeNull());
     expect(useAuthStore.getState().refreshToken).toBeNull();
     expect(useAuthStore.getState().isAdmin).toBe(false);
     // 로그아웃 직후에는 "로그인"으로 바뀐다
     expect(screen.getByRole('link', { name: '로그인' })).toBeInTheDocument();
   });
 
-  it('로그아웃하면 [관리자] 메뉴도 사라진다', () => {
+  it('로그아웃하면 [관리자] 메뉴도 사라진다', async () => {
     로그인(true);
     renderWithProviders(<Header />);
 
@@ -129,6 +139,6 @@ describe('Header 로그아웃', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '로그아웃' }));
 
-    expect(링크개수('관리자')).toBe(0);
+    await waitFor(() => expect(링크개수('관리자')).toBe(0));
   });
 });

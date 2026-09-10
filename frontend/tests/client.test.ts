@@ -2,23 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, api, request } from '../src/api/client';
 import { API_BASE_URL, endpoints } from '../src/api/endpoints';
 import { useAuthStore } from '../src/features/auth/authStore';
-
-/** 본문 있는 응답. 204는 본문을 가질 수 없으므로 null을 넘긴다. */
-function 응답(status: number, body?: unknown): Response {
-  return new Response(body === undefined ? null : JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-/**
- * 호출마다 새 Response를 만든다.
- * Response 본문은 한 번만 읽을 수 있어서, 같은 객체를 mockResolvedValue로 재사용하면
- * 두 번째 호출에서 "Body has already been read"로 터진다.
- */
-function 항상응답(status: number, body?: unknown): () => Promise<Response> {
-  return () => Promise.resolve(응답(status, body));
-}
+import { fetch가로채기, 응답, 항상응답 } from './fetchMock';
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -34,8 +18,7 @@ function 헤더(n: number): Record<string, string> {
 beforeEach(() => {
   useAuthStore.setState({ accessToken: null, refreshToken: null, memberId: null, isAdmin: false });
   localStorage.clear();
-  fetchMock = vi.fn();
-  vi.stubGlobal('fetch', fetchMock);
+  fetchMock = fetch가로채기();
 });
 
 afterEach(() => {

@@ -33,8 +33,10 @@ describe('App 라우팅', () => {
     expect(screen.getByRole('button', { name: '메뉴' })).toBeInTheDocument();
   });
 
-  it('아직 만들지 않은 경로는 준비 중 안내를 보여준다', () => {
-    renderWithProviders(<App />, '/boards');
+  it('등록되지 않은 경로는 준비 중 안내를 보여준다', () => {
+    // /boards 같은 보호 경로는 FE-03부터 RequireAuth가 먼저 가로채므로
+    // 캐치올(`*`)을 확인하려면 라우트가 아예 없는 경로를 써야 한다.
+    renderWithProviders(<App />, '/nowhere');
 
     // 헤더 아래가 빈 화면이 되면 메뉴가 고장 난 것처럼 보인다.
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('준비 중인 화면입니다');
