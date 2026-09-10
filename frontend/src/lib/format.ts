@@ -14,3 +14,13 @@ export function formatDate(iso: string): string {
   if (Number.isNaN(날짜.getTime())) return iso;
   return `${날짜.getFullYear()}-${두자리(날짜.getMonth() + 1)}-${두자리(날짜.getDate())}`;
 }
+
+/**
+ * `MM-DD` — 목록의 좁은 열에 쓴다(와이어프레임 7번의 "작성일 09-08" 표기).
+ * 연도를 떼는 것은 표시상의 선택이므로, 연도가 중요한 화면에서는 formatDate를 쓴다.
+ */
+export function formatMonthDay(iso: string): string {
+  const 날짜 = new Date(iso);
+  if (Number.isNaN(날짜.getTime())) return iso;
+  return `${두자리(날짜.getMonth() + 1)}-${두자리(날짜.getDate())}`;
+}

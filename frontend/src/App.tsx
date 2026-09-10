@@ -1,10 +1,12 @@
 import { Route, Routes } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import RequireAuth from './components/layout/RequireAuth';
+import BoardListPage from './pages/BoardListPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import MyPage from './pages/MyPage';
 import NotReadyPage from './pages/NotReadyPage';
+import PostListPage from './pages/PostListPage';
 import SignupPage from './pages/SignupPage';
 
 /**
@@ -25,7 +27,8 @@ export default function App() {
         <Route path="/signup" element={<SignupPage />} />
 
         <Route element={<RequireAuth />}>
-          <Route path="/boards" element={<NotReadyPage />} />
+          <Route path="/boards" element={<BoardListPage />} />
+          <Route path="/boards/:boardId/posts" element={<PostListPage />} />
           <Route path="/practice-rooms" element={<NotReadyPage />} />
           <Route path="/me" element={<MyPage />} />
           <Route path="/admin" element={<NotReadyPage />} />

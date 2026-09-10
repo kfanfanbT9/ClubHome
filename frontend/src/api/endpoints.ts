@@ -13,4 +13,6 @@ export const endpoints = {
   refresh: '/api/auth/refresh',
   logout: '/api/auth/logout',
   me: '/api/members/me',
+  boards: '/api/boards',
+  boardPosts: (boardId: number) => `/api/boards/${boardId}/posts`,
 } as const;
