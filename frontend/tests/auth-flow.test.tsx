@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../src/App';
 import { useAuthStore } from '../src/features/auth/authStore';
@@ -26,6 +27,15 @@ const 토큰쌍 = { accessToken: 'access-1', refreshToken: 'refresh-1', member: 
 let fetchMock: FetchMock;
 
 const 제목 = () => screen.getByRole('heading', { level: 1 }).textContent;
+
+/**
+ * 지금 주소를 화면에 찍어두는 테스트 전용 조각.
+ * 어떤 화면이 렌더되는지는 화면 이슈마다 달라지므로, 주소 복원은 주소로 확인한다.
+ */
+function 주소표시() {
+  const location = useLocation();
+  return <output data-testid="주소">{`${location.pathname}${location.search}`}</output>;
+}
 
 function 입력하기(라벨: string, 값: string) {
   fireEvent.change(screen.getByLabelText(라벨), { target: { value: 값 } });
@@ -112,17 +122,23 @@ describe('보호 경로 가드', () => {
 
   it('쿼리 문자열이 붙은 보호 경로도 로그인 후 그대로 복원된다', async () => {
     fetchMock.mockImplementation(항상응답(200, 토큰쌍));
-    renderWithProviders(<App />, '/boards?page=3');
+    renderWithProviders(
+      <>
+        <App />
+        <주소표시 />
+      </>,
+      '/boards?page=3',
+    );
 
     expect(제목()).toBe('로그인');
+    expect(screen.getByTestId('주소')).toHaveTextContent('/login');
 
     입력하기('이메일(ID)', 'sax@example.com');
     입력하기('비밀번호', 'password123');
     fireEvent.click(screen.getByRole('button', { name: '로그인' }));
 
-    await waitFor(() => expect(제목()).not.toBe('로그인'));
     // pathname만 넘기면 ?page=3 이 사라져 목록 3페이지를 보려던 사용자가 1페이지로 떨어진다.
-    expect(screen.getByText(/page=3/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId('주소')).toHaveTextContent('/boards?page=3'));
   });
 
   it('로그인 후에는 원래 가려던 경로로 돌아간다', async () => {
