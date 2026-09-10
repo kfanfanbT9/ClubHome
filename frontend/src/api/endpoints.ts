@@ -20,4 +20,18 @@ export const endpoints = {
   roomReservations: (roomId: number) => `/api/practice-rooms/${roomId}/reservations`,
   myReservations: '/api/members/me/reservations',
   cancelReservation: (reservationId: number) => `/api/reservations/${reservationId}/cancel`,
+
+  admin: {
+    members: '/api/admin/members',
+    memberGrade: (memberId: number) => `/api/admin/members/${memberId}/grade`,
+    memberGrades: '/api/admin/member-grades',
+    memberGradeItem: (gradeId: number) => `/api/admin/member-grades/${gradeId}`,
+    boards: '/api/admin/boards',
+    board: (boardId: number) => `/api/admin/boards/${boardId}`,
+    practiceRooms: '/api/admin/practice-rooms',
+    practiceRoom: (roomId: number) => `/api/admin/practice-rooms/${roomId}`,
+    reservations: '/api/admin/reservations',
+    cancelReservation: (reservationId: number) =>
+      `/api/admin/reservations/${reservationId}/cancel`,
+  },
 } as const;

@@ -1,6 +1,11 @@
 import { Route, Routes } from 'react-router-dom';
 import Layout from './components/layout/Layout';
+import RequireAdmin from './components/layout/RequireAdmin';
 import RequireAuth from './components/layout/RequireAuth';
+import AdminHomePage from './pages/admin/AdminHomePage';
+import BoardAdminPage from './pages/admin/BoardAdminPage';
+import MemberGradeAdminPage from './pages/admin/MemberGradeAdminPage';
+import PracticeRoomAdminPage from './pages/admin/PracticeRoomAdminPage';
 import BoardListPage from './pages/BoardListPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -41,7 +46,14 @@ export default function App() {
           <Route path="/practice-rooms/:roomId/reserve" element={<ReservationConfirmPage />} />
           <Route path="/me/reservations" element={<MyReservationsPage />} />
           <Route path="/me" element={<MyPage />} />
-          <Route path="/admin" element={<NotReadyPage />} />
+
+          {/* 관리자 화면. 클라이언트 가드일 뿐이고 실제 인가는 서버가 403으로 한다. */}
+          <Route element={<RequireAdmin />}>
+            <Route path="/admin" element={<AdminHomePage />} />
+            <Route path="/admin/members" element={<MemberGradeAdminPage />} />
+            <Route path="/admin/boards" element={<BoardAdminPage />} />
+            <Route path="/admin/practice-rooms" element={<PracticeRoomAdminPage />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<NotReadyPage />} />
