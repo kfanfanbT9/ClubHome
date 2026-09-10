@@ -29,7 +29,12 @@ export function useDaySlots(roomId: number, date: string) {
     queryKey: roomKeys.slots(roomId, date),
     queryFn: () =>
       api.get<RoomReservationsResponse>(endpoints.roomReservations(roomId), { query: { date } }),
-    enabled: Number.isInteger(roomId) && date.length > 0,
+    /**
+     * `Number.isInteger(0)`이 true라서, 연습실 목록이 도착하기 전의 roomId 0 을
+     * 그냥 통과시키면 `/api/practice-rooms/0/reservations` 로 쓸모없는 404가 나간다.
+     * 연습실 id는 1부터이므로 양수만 통과시킨다.
+     */
+    enabled: Number.isInteger(roomId) && roomId > 0 && date.length > 0,
   });
 }
 

@@ -166,3 +166,22 @@ describe('서버 거절 처리', () => {
     expect(screen.queryByRole('link', { name: '최신 예약현황 보기' })).not.toBeInTheDocument();
   });
 });
+
+describe('리뷰에서 발견한 문제', () => {
+  it('시각이 형식에 맞지 않으면 NaN을 보여주지 않는다', () => {
+    목설정({ status: 201, body: {} });
+    // 주소를 손으로 고쳤을 때의 경우다.
+    렌더('/practice-rooms/1/reserve?date=2026-09-20&start=abc&end=xyz');
+
+    expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
+    expect(screen.getByText(/예약할 시간대가 지정되지 않았습니다/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '예약 확정' })).not.toBeInTheDocument();
+  });
+
+  it('시작이 종료보다 늦으면 확정 버튼을 주지 않는다', () => {
+    목설정({ status: 201, body: {} });
+    렌더('/practice-rooms/1/reserve?date=2026-09-20&start=11:00&end=10:00');
+
+    expect(screen.queryByRole('button', { name: '예약 확정' })).not.toBeInTheDocument();
+  });
+});

@@ -5,13 +5,24 @@ import {
   usePracticeRooms,
 } from '../features/practiceRoom/useReservationQueries';
 
-/** 30분 슬롯 몇 칸인지. 요약 문구에만 쓴다. */
-function 슬롯수(start: string, end: string): number {
+/**
+ * 30분 슬롯 몇 칸인지. 칸 수로 셀 수 없는 값이면 null 을 준다.
+ *
+ * 주소를 손으로 고칠 수 있는 화면이라(`?start=abc`) 파싱 실패를 그냥 두면
+ * "NaN슬롯"이 화면에 찍히고, 그대로 확정을 눌러 400을 받게 된다.
+ */
+function 슬롯수(start: string, end: string): number | null {
   const 분 = (시각: string) => {
-    const [시, 분] = 시각.split(':').map(Number);
-    return 시 * 60 + 분;
+    const 조각 = /^(\d{1,2}):(\d{2})$/.exec(시각);
+    if (!조각) return null;
+    return Number(조각[1]) * 60 + Number(조각[2]);
   };
-  return Math.max(0, (분(end) - 분(start)) / 30);
+  const 시작분 = 분(start);
+  const 종료분 = 분(end);
+  if (시작분 === null || 종료분 === null) return null;
+  const 칸 = (종료분 - 시작분) / 30;
+  // 30분 경계가 아니거나 순서가 뒤바뀐 구간은 셀 수 없다.
+  return Number.isInteger(칸) && 칸 > 0 ? 칸 : null;
 }
 
 /**
@@ -55,7 +66,8 @@ export default function ReservationConfirmPage() {
       },
     );
 
-  const 값이빠졌다 = !date || !start || !end;
+  const 칸수 = 슬롯수(start, end);
+  const 값이빠졌다 = !date || !start || !end || 칸수 === null;
 
   return (
     <main className="page page--form">
@@ -82,7 +94,7 @@ export default function ReservationConfirmPage() {
             <dd>{date}</dd>
             <dt>선택 시간대</dt>
             <dd>
-              {start} ~ {end} (30분 단위 {슬롯수(start, end)}슬롯 연속)
+              {start} ~ {end} (30분 단위 {칸수}슬롯 연속)
             </dd>
           </dl>
 

@@ -206,3 +206,20 @@ describe('내 예약 내역 링크', () => {
     );
   });
 });
+
+describe('리뷰에서 발견한 문제', () => {
+  it('연습실 목록이 오기 전에는 현황을 요청하지 않는다', async () => {
+    목설정();
+    // 주소에 roomId가 없으면 목록의 첫 연습실을 봐야 한다.
+    렌더('/practice-rooms?date=2026-09-20');
+
+    await screen.findByText('09:00-09:30');
+    // roomId가 정해지기 전(0)에 요청이 나가면 /practice-rooms/0/reservations 로
+    // 쓸모없는 404를 받는다. Number.isInteger(0)이 true라서 생기는 일이다.
+    expect(
+      fetchMock.mock.calls.some(([url]) =>
+        (url as string).includes('/api/practice-rooms/0/reservations'),
+      ),
+    ).toBe(false);
+  });
+});
