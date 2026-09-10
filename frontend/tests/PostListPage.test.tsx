@@ -212,3 +212,27 @@ describe('페이지네이션', () => {
     ).toBe(true);
   });
 });
+
+describe('범위를 벗어난 페이지', () => {
+  it('글이 있는 게시판을 비었다고 안내하지 않는다', async () => {
+    // ?page=99 를 직접 열거나, 북마크한 3페이지에서 글이 지워진 경우다.
+    목설정({ status: 200, body: { items: [], page: 99, pageSize: 20, totalCount: 45 } });
+    렌더('/boards/1/posts?page=99');
+
+    // 돌아갈 길을 준다.
+    expect(await screen.findByRole('link', { name: '첫 페이지로' })).toHaveAttribute(
+      'href',
+      '/boards/1/posts',
+    );
+    expect(screen.queryByText('아직 등록된 게시글이 없습니다.')).not.toBeInTheDocument();
+    expect(document.querySelector('.empty')?.textContent).toContain('99페이지에는 게시글이 없습니다.');
+  });
+
+  it('정말로 글이 없는 게시판에는 빈 상태 안내가 그대로 나온다', async () => {
+    목설정({ status: 200, body: { items: [], page: 1, pageSize: 20, totalCount: 0 } });
+    렌더();
+
+    expect(await screen.findByText('아직 등록된 게시글이 없습니다.')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '첫 페이지로' })).not.toBeInTheDocument();
+  });
+});

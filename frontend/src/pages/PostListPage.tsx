@@ -97,8 +97,23 @@ export default function PostListPage() {
         </p>
       )}
 
-      {posts.data && posts.data.items.length === 0 && (
+      {/* 정말로 글이 없는 게시판 */}
+      {posts.data && posts.data.totalCount === 0 && (
         <p className="empty">아직 등록된 게시글이 없습니다.</p>
+      )}
+
+      {/**
+       * 글은 있는데 이 페이지에만 없는 경우 — `?page=99`를 직접 열거나, 북마크해 둔
+       * 3페이지에서 그 사이에 글이 지워지면 여기로 온다. 이때 "글이 없습니다"라고 하면
+       * 글이 있는 게시판을 비었다고 알려주는 셈이라, 상황을 그대로 말하고 돌아갈 길을 준다.
+       */}
+      {posts.data && posts.data.totalCount > 0 && posts.data.items.length === 0 && (
+        <p className="empty">
+          {page}페이지에는 게시글이 없습니다.{' '}
+          <Link className="link" to={`/boards/${boardId}/posts`}>
+            첫 페이지로
+          </Link>
+        </p>
       )}
 
       {posts.data && posts.data.items.length > 0 && (
