@@ -177,6 +177,7 @@ h1, h2, .screen-title{ letter-spacing: -0.03em; }
 | **잠금 표시** | 자물쇠 아이콘 + `--color-text-subtle` + "접근불가" **텍스트를 함께** 둔다. 색만으로 구분하지 않는다 | 6번 |
 | **예약 슬롯** | 가능=`--color-surface`+테두리, 선택=`--color-accent-tint`+테두리 `--color-accent`, 불가=`--color-bg`+글자 `--color-text-subtle`+예약자명 | 9번 |
 | **예약 상태** | 예약=`--color-accent`, 완료=`--color-text-muted`, 취소=`--color-text-subtle`. 색과 함께 한글 라벨을 표기 | 11·14번 |
+| **본문 링크** | 글자 `--color-accent` + **밑줄**. 메뉴·타일·표의 링크는 각자 클래스가 색을 정하므로 링크 기본 장식을 지우지만, 문장 안에 들어가는 링크는 그 초기화 때문에 주변 글자와 구별되지 않는다. 색만으로 구분하지 않는다 | 전 화면 |
 | **오류 메시지** | 입력창 바로 아래, `--text-sm`, `--color-danger`. 서버의 `message`를 그대로 노출한다(백엔드가 사용자 노출 가능한 문구만 4xx에 담는다) | 전 화면 |
 | **빈 상태** | 표·목록이 비면 안내 문구 한 줄을 `--color-text-muted`로 중앙 배치 | 7·11번 |
 

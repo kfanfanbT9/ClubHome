@@ -14,7 +14,10 @@ export default function NotReadyPage() {
     <main className="page">
       <h1 className="page__title">준비 중인 화면입니다</h1>
       <p className="page__note">
-        아직 만들지 않은 화면이에요. <Link to="/">홈으로 돌아가기</Link>
+        아직 만들지 않은 화면이에요.{' '}
+        <Link className="link" to="/">
+          홈으로 돌아가기
+        </Link>
       </p>
     </main>
   );
