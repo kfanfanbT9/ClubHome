@@ -33,9 +33,100 @@ npm start              # http://localhost:3000
   - 정상: **200** `{ "status": "ok", "db": "ok" }`
   - DB 연결 실패: **503** `{ "status": "error", "db": "error" }` — 상태코드만 보는 프로브(`curl -f`, 로드밸런서)로도 장애가 감지된다. 실패 사유는 `ERROR 헬스체크 DB 확인 실패` 로그에 스택과 함께 남는다.
 
+## 배포
+
+배포 형태는 **단일 서버**입니다 — 하나의 VM/컨테이너에 Express와 PostgreSQL을 둡니다. 로드밸런서·이중화·별도 로그 수집 인프라(ELK 등)와 CI/CD 파이프라인은 이 프로젝트 범위 밖입니다(원칙 §1·§5, PRD §5).
+
+### 순서
+
+```bash
+# 1. 데이터베이스 생성
+createdb clubhome                       # 또는 psql -c "CREATE DATABASE clubhome;"
+
+# 2. 스키마 적용 (DDL 단일 소스)
+psql -d clubhome -f ../docs/schema.sql
+
+#    운영에는 개발용 시드를 넣지 않는다.
+#    docs/seed-dev.sql 은 개발·테스트 편의용 계정과 데이터이며,
+#    비밀번호 해시가 저장소에 들어 있으므로 운영에 적용하면 안 된다.
+
+# 3. 환경변수
+cp .env.example .env                    # 값을 채운다 (아래 "운영 환경변수" 참조)
+
+# 4. 프론트엔드 프로덕션 빌드
+cd ../frontend
+npm ci
+VITE_API_BASE_URL= npm run build        # dist/ 생성. 빈 값 = 같은 출처로 API 호출
+
+# 5. 백엔드 기동 (프론트까지 함께 서빙)
+cd ../backend
+npm ci --omit=dev
+npm start
+
+# 6. 기동 확인
+curl -f http://localhost:3000/health    # 200 {"status":"ok","db":"ok"}
+```
+
+### 운영 환경변수
+
+`.env.example`을 복사해 채웁니다. **시크릿은 저장소에 넣지 않습니다** — `.env`는 `.gitignore`에 있고 `.env.example`에는 키 이름만 있습니다.
+
+| 키 | 필수 | 운영 값 예시 |
+|---|---|---|
+| `DATABASE_URL` | ✅ | `postgresql://clubhome:***@localhost:5432/clubhome` |
+| `JWT_ACCESS_SECRET` | ✅ | 충분히 긴 무작위 문자열. **Refresh와 다른 값** |
+| `JWT_REFRESH_SECRET` | ✅ | 위와 다른 무작위 문자열 |
+| `JWT_ACCESS_EXPIRES_IN` | ✅ | `1h` |
+| `JWT_REFRESH_EXPIRES_IN` | ✅ | `14d` |
+| `PORT` | | `3000` (미설정 시 기본값) |
+| `STATIC_DIR` | | `../frontend/dist` — 단일 서버 배포에서 프론트를 함께 서빙 |
+| `CORS_ORIGIN` | | 프론트를 **다른 도메인**에 둘 때만. `STATIC_DIR`을 쓰면 필요 없다 |
+| `ENABLE_API_DOCS` | | **운영에서는 비워 둔다.** `/api-docs`에 인증이 없다 |
+| `LOG_LEVEL` | | `info` (미설정 시 기본값) |
+
+시크릿 생성 예: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`
+
+JWT Secret이 없으면 서버가 기동하지 않고 즉시 실패합니다(`환경변수 JWT_ACCESS_SECRET 미설정`). 하드코딩 기본값을 두지 않았기 때문입니다 — 값을 잊은 채로 뜨는 것보다 못 뜨는 편이 안전합니다.
+
+### 배포 형태 두 가지
+
+**(가) 단일 출처 — 권장.** `STATIC_DIR`을 프론트 빌드 결과로 지정하면 Express가 정적 파일과 API를 함께 내보냅니다. 프론트와 API가 같은 출처이므로 **CORS 설정이 아예 필요 없습니다.** 정적 서버를 하나 더 두지 않는다는 점에서 "단일 서버" 원칙에 맞습니다.
+
+```bash
+# frontend
+VITE_API_BASE_URL= npm run build
+# backend/.env
+STATIC_DIR=../frontend/dist
+```
+
+`/boards`처럼 클라이언트 라우트를 주소창에 직접 넣거나 새로고침해도 `index.html`로 폴백해 화면이 뜹니다. `/api/*`와 `/health`는 폴백에서 제외되므로 없는 API는 HTML이 아니라 JSON 404를 받습니다.
+
+**(나) 출처 분리.** 프론트를 별도 도메인(정적 호스팅·CDN)에 두는 경우입니다. 이때는 두 값을 서로 맞춰야 합니다.
+
+```bash
+# frontend — 빌드 결과에 이 주소가 박힌다
+VITE_API_BASE_URL=https://api.clubhome.example.com npm run build
+# backend/.env — 프론트 도메인을 허용 목록에 넣는다
+CORS_ORIGIN=https://clubhome.example.com
+```
+
+**`VITE_API_BASE_URL`은 빌드 시점에 결과물에 박힙니다.** 런타임에 바꿀 수 없으므로, API 주소가 달라지면 프론트를 다시 빌드해야 합니다. 반대로 (가)에서 이 값을 비우지 않으면 빌드된 프론트가 개발용 주소(`http://localhost:3001`)를 계속 호출합니다 — 배포에서 가장 걸리기 쉬운 지점입니다.
+
+운영은 HTTPS로만 서비스합니다(원칙 §5). TLS 종료는 리버스 프록시나 호스팅 계층에서 처리하며, 이 서버는 평문 HTTP로 그 뒤에 둡니다.
+
+### 기동 확인과 무중단
+
+```bash
+curl -f http://localhost:3000/health
+```
+
+`GET /health`는 DB 연결까지 확인하고, 실패 시 **503**을 반환합니다. `curl -f`나 컨테이너 헬스체크가 상태코드만 보고도 장애를 감지합니다.
+
+무중단 배포·프로세스 관리자(systemd·pm2 등) 설정은 이 프로젝트 범위 밖입니다. 필요해지면 `npm start`를 감싸고 `/health`를 준비 상태 확인에 쓰면 됩니다.
+
 ## CORS
 
-프론트엔드를 다른 포트/도메인에서 띄울 때만 필요합니다. `CORS_ORIGIN`에 허용 origin을 쉼표로 적습니다.
+프론트엔드를 다른 포트/도메인에서 띄울 때만 필요합니다. `CORS_ORIGIN`에 허용 origin을 쉼표로 적습니다. **`STATIC_DIR`로 프론트를 함께 서빙하면 같은 출처이므로 설정하지 않아도 됩니다.**
 
 ```bash
 CORS_ORIGIN=http://localhost:5173,https://clubhome.example.com
@@ -77,8 +168,9 @@ DB 스키마는 `docs/schema.sql`이 단일 소스이며, 개발용 초기 데�
 
 ## 환경변수
 
-`.env.example`의 키를 모두 채워야 합니다. `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`, `PORT`.
-실제 시크릿 값은 `.env`에만 두며 저장소에 커밋하지 않습니다.
+필수 키는 `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`입니다. 선택 키는 `PORT`, `STATIC_DIR`, `CORS_ORIGIN`, `ENABLE_API_DOCS`, `LOG_LEVEL`이며 미설정 시 각각 안전한 기본값(끔 또는 기본 포트)으로 동작합니다.
+
+키별 설명과 운영 값은 [배포 → 운영 환경변수](#운영-환경변수) 표에 정리되어 있습니다. `.env.example`에는 키 이름만 있고 값은 비어 있으며, 실제 시크릿은 `.env`에만 두고 저장소에 커밋하지 않습니다.
 
 ## 디렉토리 구조
 

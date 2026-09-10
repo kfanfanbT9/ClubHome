@@ -15,6 +15,7 @@
 | 0.7 | 2026-09-10 | §5 선택 키에 `CORS_ORIGIN` 추가(정확 일치·와일드카드 미지원·미설정 시 전부 차단). "CORS/HTTPS" 항목이 요구하던 환경변수의 실제 키 이름을 명시하고, Bearer 토큰 인증이므로 `Access-Control-Allow-Credentials`를 열지 않는다는 결정도 함께 기록 | Kang SangSoo |
 | 0.8 | 2026-09-10 | §8 문서 관리 원칙 신설: 문서 간 참조에 버전 번호를 쓰지 않기로 결정. 종전에는 §0 참조에 버전을 박아, 문서 하나를 고치면 그 문서를 가리키는 모든 문서의 표기와 버전이 연쇄로 올라갔다(선택 키 한 줄 추가에 문서 6개가 움직인 사례). 이 문서 §0의 참조에서도 버전 표기를 제거 | Kang SangSoo |
 | 0.9 | 2026-09-10 | 코드베이스 실측 결과 반영: §7 트리에 누락돼 있던 `middlewares/cors.js`·`utils/logger.js`·`tests/e2e-scenarios.sh` 추가. §5의 "로그는 콘솔 출력 수준으로 충분"을 실제 구현대로 **로깅** 항목으로 분리(네 지점, stdout/stderr 분리, 본문·인증 헤더 미기록 기준)하고, **헬스체크** 항목을 분리해 DB 실패 시 503 응답을 명시 | Kang SangSoo |
+| 0.19 | 2026-09-10 | IT-02 배포 준비 반영. §5 선택 키에 `STATIC_DIR` 추가. 단일 서버 배포(PRD §5)인데 프론트 빌드 결과를 내보낼 수단이 없어, Express가 함께 서빙할 수 있게 했다 — 같은 출처가 되므로 `CORS_ORIGIN`이 필요 없어진다. 미설정이 기본값(끔)이라는 관례는 `ENABLE_API_DOCS`·`CORS_ORIGIN`과 같다. SPA 폴백에서 `/api/`와 비GET을 제외하는 근거도 함께 기록 | Kang SangSoo |
 | 0.18 | 2026-09-10 | FE-09 구현 반영. §6 트리에 `components/layout/RequireAdmin.tsx`와 `pages/admin/AdminHomePage.tsx` 추가. 관리자 훅은 이슈 FE-09 요구대로 `features/admin/useAdminQueries.ts` 한 파일에 모았다 — 관리자 화면끼리 서로의 캐시를 무효화하는 일이 많아 키와 무효화 규칙을 한눈에 봐야 한다. 원칙 본문 변경 없음. FE-01~FE-09로 프론트엔드 화면 전체가 구현됐다 | Kang SangSoo |
 | 0.17 | 2026-09-10 | FE-08 구현 반영. §6 트리에 `features/practiceRoom/reservationRules.ts`와 `components/common/ConfirmButton.tsx` 추가. 후자는 "같은 패턴이 3회 반복된 뒤에 공통화한다"는 단서보다 이르게(2회) 합친 경우다 — 삭제·취소 확인은 한쪽에만 빠지면 곧바로 사고가 되는 종류라 판단이 다르다. 원칙 본문 변경 없음 | Kang SangSoo |
 | 0.16 | 2026-09-10 | FE-07 구현 반영. §6 트리에 `features/practiceRoom/slotSelection.ts` 추가. 도메인 규칙 중 화면과 떼어낼 수 있는 것은 순수 함수로 두어 경우별로 검증한다는 사례다(연속 슬롯 선택). 원칙 본문 변경 없음 | Kang SangSoo |
@@ -116,6 +117,7 @@ routes (URL·메서드 정의, 인증/인가 미들웨어 부착)
   선택 키(미설정이어도 서버가 기동되며, 각각 안전한 기본값을 갖는다):
   - `LOG_LEVEL` — 콘솔 로그 레벨(`silent`/`error`/`warn`/`info`, 기본 `info`). 운영에서 요청 로그를 줄이려면 `warn`으로 낮춘다.
   - `CORS_ORIGIN` — CORS 허용 origin을 쉼표로 구분해 나열한다(예: `http://localhost:5173`). **정확히 일치하는 origin만** 허용하며 와일드카드 `*`는 지원하지 않고, **미설정이면 교차 출처 요청을 전혀 허용하지 않는다.** `Origin` 헤더가 없는 요청(curl·서버 간 호출·동일 출처)은 CORS 판정을 거치지 않으므로 미설정 상태가 기존 동작을 바꾸지 않는다. 아래 "CORS/HTTPS" 항목이 요구하는 환경변수 관리가 이 키다.
+  - `STATIC_DIR` — 프론트엔드 빌드 결과를 이 서버가 함께 서빙할 디렉토리(예: `../frontend/dist`). **미설정이면 정적 서빙을 등록하지 않는다** — 개발 중에는 Vite가 프론트를 담당하므로 기본값이 "끔"이어야 한다. 설정하면 프론트와 API가 같은 출처가 되어 `CORS_ORIGIN`이 필요 없어진다. 단일 서버 배포(PRD §5)에서 정적 서버를 하나 더 두지 않기 위한 키다. 클라이언트 라우트는 `index.html`로 폴백하되 `/api/`로 시작하는 경로와 GET 이외의 메서드는 폴백에서 제외한다 — 없는 API에 HTML을 200으로 주면 클라이언트가 JSON을 파싱하다 깨진다.
   - `ENABLE_API_DOCS` — `'true'`일 때만 `GET /api-docs`(Swagger UI)와 `GET /swagger.yaml`을 등록한다. **기본값은 끔**이며 그 외 모든 값(`1`·`TRUE`·`yes`·빈 값 포함)도 끔으로 취급한다. 두 경로에 인증이 없으므로 켜면 API 표면 전체가 공개되기 때문에, "명시적으로 켜야 열린다"를 기본값으로 삼는다.
 
   선택 키는 값이 아니라 **동작 범위**를 정하므로 `.env.example`에도 키 이름을 남긴다. 새 선택 키를 추가할 때는 기본값이 "가장 닫힌 상태"인지 먼저 확인한다.
