@@ -36,6 +36,9 @@ export default function LoginPage() {
     set값((이전) => ({ ...이전, [키]: 값하나 }));
     // 고치는 중에 이전 오류가 남아 있으면 이미 해결한 문제를 계속 지적하는 셈이 된다.
     set오류((이전) => ({ ...이전, [키]: undefined }));
+    // 서버가 준 실패 안내도 같이 지운다 — 방금 비밀번호를 고쳤는데
+    // "일치하지 않습니다"가 그대로 붙어 있으면 시도 결과인지 알 수 없다.
+    if (login.isError) login.reset();
   };
 
   const 제출 = (event: FormEvent) => {

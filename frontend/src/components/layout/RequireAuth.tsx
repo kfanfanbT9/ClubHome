@@ -15,8 +15,11 @@ export default function RequireAuth() {
   const location = useLocation();
 
   if (!isAuthenticated) {
+    // pathname만 넘기면 쿼리 문자열이 사라진다 — 목록 3페이지를 보려던 사용자가
+    // 로그인 뒤 1페이지로 떨어진다. search까지 붙여 원래 주소를 그대로 복원한다.
+    const 원래주소 = `${location.pathname}${location.search}`;
     // replace를 쓰지 않으면 뒤로가기로 로그인 화면과 보호 경로 사이를 무한히 왕복한다.
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/login" state={{ from: 원래주소 }} replace />;
   }
 
   return <Outlet />;

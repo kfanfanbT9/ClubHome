@@ -135,3 +135,22 @@ describe('회원가입 서버 오류 표시', () => {
     expect(screen.getByLabelText('이메일(ID)')).not.toHaveAttribute('aria-invalid');
   });
 });
+
+describe('서버 오류가 남아 있는 문제', () => {
+  it('이메일을 고치면 이전 중복 오류가 사라진다', async () => {
+    fetchMock.mockImplementation(
+      항상응답(409, { code: 'EMAIL_DUPLICATED', message: '이미 사용 중인 이메일입니다.' }),
+    );
+    renderWithProviders(<SignupPage />);
+
+    정상입력();
+    제출();
+    await screen.findByText('이미 사용 중인 이메일입니다.');
+
+    입력하기('이메일(ID)', 'another@example.com');
+
+    // 다른 이메일을 입력했는데도 "이미 사용 중"이 붙어 있으면,
+    // 방금 고친 문제를 계속 지적하는 셈이 된다.
+    expect(screen.queryByText('이미 사용 중인 이메일입니다.')).not.toBeInTheDocument();
+  });
+});

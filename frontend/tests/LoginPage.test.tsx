@@ -165,3 +165,23 @@ describe('로그인 서버 오류 표시', () => {
 
 // 가입 직후 안내는 실제로 SignupPage가 state를 실어 이동해야 나타나므로
 // App 수준 흐름 테스트(auth-flow.test.tsx)에서 검증한다.
+
+describe('서버 오류가 남아 있는 문제', () => {
+  it('비밀번호를 고치면 이전 실패 안내가 사라진다', async () => {
+    fetchMock.mockImplementation(
+      항상응답(401, { code: 'UNAUTHORIZED', message: '이메일 또는 비밀번호가 일치하지 않습니다.' }),
+    );
+    renderWithProviders(<LoginPage />);
+
+    입력하기('이메일(ID)', 'sax@example.com');
+    입력하기('비밀번호', 'wrong-password');
+    제출();
+    await screen.findByRole('alert');
+
+    입력하기('비밀번호', 'another-password');
+
+    // 방금 비밀번호를 고쳤는데 "일치하지 않습니다"가 그대로 붙어 있으면
+    // 그게 어느 시도의 결과인지 알 수 없다.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+});

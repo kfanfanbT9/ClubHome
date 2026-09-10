@@ -109,6 +109,21 @@ describe('보호 경로 가드', () => {
     expect(제목()).toBe('준비 중인 화면입니다');
   });
 
+  it('쿼리 문자열이 붙은 보호 경로도 로그인 후 그대로 복원된다', async () => {
+    fetchMock.mockImplementation(항상응답(200, 토큰쌍));
+    renderWithProviders(<App />, '/boards?page=3');
+
+    expect(제목()).toBe('로그인');
+
+    입력하기('이메일(ID)', 'sax@example.com');
+    입력하기('비밀번호', 'password123');
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }));
+
+    await waitFor(() => expect(제목()).toBe('준비 중인 화면입니다'));
+    // pathname만 넘기면 ?page=3 이 사라져 목록 3페이지를 보려던 사용자가 1페이지로 떨어진다.
+    expect(screen.getByText(/page=3/)).toBeInTheDocument();
+  });
+
   it('로그인 후에는 원래 가려던 경로로 돌아간다', async () => {
     fetchMock.mockImplementation(항상응답(200, 토큰쌍));
     renderWithProviders(<App />, '/practice-rooms');

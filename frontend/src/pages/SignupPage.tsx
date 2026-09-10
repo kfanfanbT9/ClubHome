@@ -55,6 +55,9 @@ export default function SignupPage() {
     const 값하나 = event.target.value;
     set값((이전) => ({ ...이전, [키]: 값하나 }));
     set오류((이전) => ({ ...이전, [키]: undefined }));
+    // 입력이 바뀌면 직전 서버 판정은 더 이상 이 입력에 대한 것이 아니다.
+    // 지우지 않으면 다른 이메일을 넣었는데도 "이미 사용 중"이 계속 붙어 있다.
+    if (signup.isError) signup.reset();
   };
 
   const 제출 = (event: FormEvent) => {
