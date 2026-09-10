@@ -15,6 +15,8 @@
 | 0.7 | 2026-09-10 | §5 선택 키에 `CORS_ORIGIN` 추가(정확 일치·와일드카드 미지원·미설정 시 전부 차단). "CORS/HTTPS" 항목이 요구하던 환경변수의 실제 키 이름을 명시하고, Bearer 토큰 인증이므로 `Access-Control-Allow-Credentials`를 열지 않는다는 결정도 함께 기록 | Kang SangSoo |
 | 0.8 | 2026-09-10 | §8 문서 관리 원칙 신설: 문서 간 참조에 버전 번호를 쓰지 않기로 결정. 종전에는 §0 참조에 버전을 박아, 문서 하나를 고치면 그 문서를 가리키는 모든 문서의 표기와 버전이 연쇄로 올라갔다(선택 키 한 줄 추가에 문서 6개가 움직인 사례). 이 문서 §0의 참조에서도 버전 표기를 제거 | Kang SangSoo |
 | 0.9 | 2026-09-10 | 코드베이스 실측 결과 반영: §7 트리에 누락돼 있던 `middlewares/cors.js`·`utils/logger.js`·`tests/e2e-scenarios.sh` 추가. §5의 "로그는 콘솔 출력 수준으로 충분"을 실제 구현대로 **로깅** 항목으로 분리(네 지점, stdout/stderr 분리, 본문·인증 헤더 미기록 기준)하고, **헬스체크** 항목을 분리해 DB 실패 시 503 응답을 명시 | Kang SangSoo |
+| 0.11 | 2026-09-10 | FE-01 착수 결정 반영. §4에서 "테스트 러너는 `node --test` 하나만 쓴다 … 별도 프레임워크를 추가하지 않는다"를 **스택별로 하나씩**으로 고쳤다 — Node 내장 러너에는 DOM과 컴포넌트 렌더링 수단이 없어 프론트엔드 로직을 검증할 방법이 없었고, 그 결과 이 조항이 "프론트는 테스트하지 않는다"와 같은 뜻이 되어 있었다. 프론트엔드는 Vitest + React Testing Library를 쓰고 `src/` 커버리지 80%를 `vite.config.ts`의 `coverage.thresholds`로 강제한다. 자동화 대상도 "UI 세부 스타일 제외"에서 "눈으로 보기 어려운 로직(토큰 재발급·슬롯 판정·권한별 노출·오류 매핑)"으로 구체화했다. 함께 발견한 오류 정정: §4가 "E2E는 범위 외"라고 단정하고 있었으나 `backend/tests/e2e-scenarios.sh`가 이미 S-01~S-08을 자동화하고 있어, API E2E는 있고 브라우저 UI E2E만 범위 외임을 명시했다. §6 트리에 `lib/queryClient.ts`·`tests/`·`vite.config.ts`·`.env.example`을 추가하고 `client.ts` 설명의 "axios/fetch"를 실제 구현대로 fetch로 정정 | Kang SangSoo |
+| 0.10 | 2026-09-10 | §6 프론트엔드 구조에 `styles/tokens.css` 추가. 스타일 가이드(`9-style.md`)가 토큰 파일 하나를 전제하는데 이 문서의 트리에 그 자리가 없어, FE-01 착수 시 놓일 위치가 불명확했다. 스타일을 파일 하나로 끝내는 원칙(CSS 변수, CSS-in-JS·Tailwind 미도입)과 `components/common/`을 미리 채우지 않는다는 단서도 함께 명시 | Kang SangSoo |
 
 ## 1. 최상위 원칙 (모든 스택 공통)
 - **YAGNI**: 지금 PRD의 P0/P1 요구사항에 없는 기능·확장 포인트는 만들지 않는다. "나중에 필요할 것 같아서" 만드는 코드는 금지한다.
@@ -83,7 +85,7 @@ routes (URL·메서드 정의, 인증/인가 미들웨어 부착)
 - 위 경로의 `:roomId`와 목록 필터 `?roomId=`는 **경로 파라미터·쿼리 파라미터 이름으로만 허용하는 축약 표기**다(경로에 `practice-rooms`가 이미 있어 `:practiceRoomId`는 중복이다). 이 값을 그대로 받는 controller·service 함수의 지역 인자명까지는 `roomId`로 두어도 되지만, **외부에 고정되는 이름 — repository 인자·SQL 컬럼·API 응답 필드 — 에는 예외 없이 `practiceRoomId` / `practice_room_id`를 쓴다.** 동의어 금지 조항이 지키려는 것은 저장·공개되는 어휘의 일관성이므로, 경계를 여기에 둔다.
 
 ## 4. 테스트/품질 원칙
-1인 개발·2일 일정에서 전체 커버리지 목표는 세우지 않는다. **PRD §9에 명시된 P0 핵심 시나리오**를 중심으로 최소한의 자동화 테스트만 작성하고, 나머지는 수동 확인으로 대체한다.
+**PRD §9에 명시된 P0 핵심 시나리오**를 자동화 테스트의 중심에 둔다. 커버리지 목표는 스택별로 다르다 — 백엔드는 수치 목표 없이 아래 "우선 테스트 대상"만 덮고, 프론트엔드는 `src/` 기준 80%를 목표로 한다(`frontend/vite.config.ts`의 `coverage.thresholds`에 박아 CI 없이도 강제된다).
 
 우선 테스트 대상 (자동화):
 - 로그인/인증: JWT 발급, 만료된 Access Token으로 접근 시 거부, Refresh Token 재발급
@@ -92,9 +94,10 @@ routes (URL·메서드 정의, 인증/인가 미들웨어 부착)
 - 게시글/예약 소유권 검사: 본인 또는 관리자만 수정/삭제/취소 가능
 
 - 위 항목은 service 레이어 단위로 최소 1개의 성공 케이스 + 1개의 실패(거부) 케이스만 작성한다.
-- **테스트 러너는 Node 내장 `node --test` 하나만 쓴다.** 규범은 "러너를 하나만 선택한다"이고, Node 20.6+ 에 이미 들어 있는 러너가 그 하나로 충분하므로 Jest 등 별도 프레임워크를 추가하지 않는다(신규 의존성 0개). 테스트는 개발 DB를 쓰지 않고 별도 테스트 DB(`.env.test`의 `DATABASE_URL`)에서 실행한다 — 준비 절차는 `backend/README.md`를 따른다.
-- 단순 CRUD(게시판 목록 조회 등)나 프론트 UI 세부 스타일은 자동화 테스트를 만들지 않고 눈으로 확인한다.
-- E2E, 성능/부하 테스트, 접근성 테스트는 범위 외 (PRD §3 Out of Scope, §9 가정사항과 일치).
+- **러너는 스택별로 하나씩만 쓴다.** 백엔드는 Node 내장 `node --test`(신규 의존성 0개), 프론트엔드는 Vitest + React Testing Library다. 프론트엔드에 별도 러너가 필요한 이유는 Node 내장 러너에 브라우저 DOM과 컴포넌트 렌더링 수단이 없기 때문이고, Vitest는 이미 쓰는 Vite의 설정·변환을 그대로 재사용하므로 빌드 설정이 두 벌로 갈라지지 않는다. 각 스택 안에서 러너를 또 늘리지는 않는다.
+- 백엔드 테스트는 개발 DB를 쓰지 않고 별도 테스트 DB(`.env.test`의 `DATABASE_URL`)에서 실행한다 — 준비 절차는 `backend/README.md`를 따른다.
+- 단순 CRUD(게시판 목록 조회 등)와 **UI의 시각적 세부(색·여백·정렬)는 자동화 테스트를 만들지 않고 눈으로 확인한다.** 프론트엔드에서 자동화하는 대상은 눈으로 보기 어려운 로직 — 토큰 재발급 분기, 연속 슬롯 선택 판정, 권한에 따른 메뉴·버튼 노출, 서버 오류코드 → 안내문 매핑 — 이다.
+- 성능/부하 테스트와 접근성 테스트는 범위 외 (PRD §3 Out of Scope, §9 가정사항과 일치). 시나리오 E2E는 백엔드 API에 한해 `backend/tests/e2e-scenarios.sh`로 자동화돼 있고(S-01~S-08), 브라우저를 구동하는 UI E2E는 범위 외다.
 
 ## 5. 설정/보안/운영 원칙
 - **환경변수**: `.env` 파일(git 미포함, `.gitignore` 등록)로 관리. 최소 다음 키를 포함한다.
@@ -152,15 +155,27 @@ frontend/
 │   │   └── admin/
 │   │       └── useAdminQueries.ts
 │   ├── api/
-│   │   ├── client.ts             # axios/fetch 인스턴스, 인증 헤더/토큰 재발급 인터셉터
+│   │   ├── client.ts             # fetch 래퍼, 인증 헤더 주입 + 토큰 재발급 인터셉터
 │   │   └── endpoints.ts          # API 경로 상수
+│   ├── styles/
+│   │   └── tokens.css            # 색상·타이포·간격 CSS 변수 (스타일 가이드 §3~§5)
 │   ├── types/                     # 도메인 타입 (Member, Board, Post, PracticeRoom, Reservation)
 │   └── lib/                       # 날짜 포맷 등 순수 유틸
+│       └── queryClient.ts        # QueryClient 생성 + 재시도 정책
+├── tests/                          # Vitest. 파일명은 검증 대상과 같게 둔다(client.test.ts 등)
+│   └── setup.ts                    # jest-dom 매처 등록
 ├── index.html
 ├── package.json
+├── vite.config.ts                  # Vite + Vitest 설정(커버리지 임계값 포함)
+├── .env.example                    # VITE_API_BASE_URL (실제 값은 .env, git 미포함)
 └── tsconfig.json
 ```
+- 테스트는 `src/` 옆에 흩지 않고 `tests/` 한 곳에 모은다 — `backend/tests/`와 같은 배치라 저장소 안에서 테스트를 찾는 방법이 스택마다 달라지지 않는다.
+- `api/endpoints.ts`에는 **지금 화면이 부르는 경로만** 둔다. swagger의 24개 경로를 미리 옮겨 적지 않고, 화면을 추가하는 이슈에서 그 화면이 쓰는 경로를 함께 넣는다(§1 YAGNI).
 - `features/*`는 "도메인당 하나의 폴더"만 유지하고, 그 안을 다시 세분화(entities/, hooks/, model/ 등)하지 않는다.
+- **스타일은 `styles/tokens.css` 파일 하나로 끝낸다.** `main.tsx`에서 한 번 import하고 각 컴포넌트는 `var(--...)`로 참조한다. 토큰 값과 화면별 적용 규칙은 스타일 가이드(`9-style.md`)가 정의하며, 이 문서는 그 파일이 놓이는 자리만 규정한다.
+  - CSS-in-JS, Tailwind, 별도 테마 프로바이더를 도입하지 않는다(PRD §7 "디자인 시스템/컴포넌트 라이브러리 신규 구축 없이"). 토큰을 CSS 변수로 두면 런타임 의존성이 0이고, 다크 모드 같은 요구가 생겨도 `:root` 재정의로 확장할 수 있다.
+  - `components/common/`에 Button·Modal·Table을 **미리 만들지 않는다.** 같은 패턴이 3회 반복된 뒤에 공통화한다(§1 조기 추상화 금지). 위 트리의 해당 항목은 그때 만들 자리를 표시한 것이다.
 
 ## 7. 백엔드 디렉토리 구조
 ```

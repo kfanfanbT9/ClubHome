@@ -14,6 +14,7 @@
 | 0.6 | 2026-09-09 | F-22에 내 예약 내역 연습실별 필터링 기능 추가 | Kang SangSoo |
 | 0.7 | 2026-09-09 | F-02의 "로그아웃 시 Refresh Token 폐기" 표현을 클라이언트 측 토큰 폐기(서버 측 저장소 없음)로 명확화 (ERD v0.3의 무상태 설계 결정과 정합) | Kang SangSoo |
 | 0.8 | 2026-09-10 | 0절 도메인 정의서 참조에서 버전 표기 제거(프로젝트 구조 설계 원칙 §8 문서 관리 원칙 적용). 요구사항 변경 없음 | Kang SangSoo |
+| 0.9 | 2026-09-10 | §6 프론트엔드 기술 스택에 실제로 도입한 Vite·`react-router-dom`·Vitest + React Testing Library를 명시. 종전 목록이 React·Zustand·TanStack Query 셋뿐이어서 빌드 도구·라우터·테스트 도구가 "미등록 라이브러리"로 남았고, `frontend/CLAUDE.md`가 미등록 라이브러리 도입 시 승인을 요구하므로 FE 작업마다 같은 승인 절차에 걸리는 상태였다. 이 목록이 프론트엔드 등록 스택의 단일 출처임도 함께 명시. 기능 요구사항(F-ID) 변경 없음 | Kang SangSoo |
 
 ## 1. 배경 및 목표
 
@@ -90,7 +91,8 @@
 - **데이터 보존**: 탈퇴 회원의 게시글/예약 이력은 삭제하지 않고 보존
 
 ## 6. 기술 스택 및 제약사항
-- **프론트엔드**: React 19 + TypeScript, 상태관리 Zustand, 서버상태/캐싱 TanStack Query
+- **프론트엔드**: React 19 + TypeScript, 빌드/개발서버 Vite, 라우팅 `react-router-dom`, 상태관리 Zustand, 서버상태/캐싱 TanStack Query. 테스트는 Vitest + React Testing Library
+  - 위 목록이 프론트엔드에 등록된 기술 스택이다. 여기에 없는 라이브러리·컴포넌트를 도입할 때는 작업을 멈추고 승인을 받는다(`frontend/CLAUDE.md`).
 - **백엔드**: Node.js + JavaScript + Express, DB 접근은 `pg` 라이브러리 기반 순수 SQL/쿼리빌더 사용 (Prisma 등 ORM 사용 금지)
 - **데이터베이스**: PostgreSQL 17
 - **인증**: JWT 기반, Access Token(단기, 예: 15분~1시간)과 Refresh Token(장기, 예: 7~14일)을 함께 사용. Access Token 만료 시 Refresh Token으로 재발급. JWT Secret과 각 토큰 유효기간은 코드에 하드코딩하지 않고 환경변수(예: `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`)로 관리. 별도 OAuth/소셜 로그인 없음
