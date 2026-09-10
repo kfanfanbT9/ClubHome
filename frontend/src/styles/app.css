@@ -949,3 +949,140 @@ a.button {
   font-size: var(--text-sm);
   color: var(--color-danger);
 }
+
+/* ============================================================
+   관리자 화면 (화면 12·13·14) — 모바일 카드 / PC 표 모양
+   ============================================================ */
+.adm-section {
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
+.adm-section__title {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.03em;
+}
+
+.adm-list {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.adm-row {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.adm-row__main {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+}
+
+.adm-row__sub {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.adm-row__manage {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.adm-row__manage .field__input {
+  max-width: 160px;
+}
+
+.adm-row__ok {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-success);
+}
+
+.adm-row__error {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+
+/* 관리 화면의 표는 모바일에서 카드로 바꾸지 않고 그대로 쌓는다
+   (와이어프레임 §1: 관리자 화면은 주로 PC에서 운영된다고 가정) */
+@media (min-width: 768px) {
+  .adm-row {
+    grid-template-columns: 1fr 2fr auto auto;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .adm-row__ok,
+  .adm-row__error,
+  .adm-form {
+    grid-column: 1 / -1;
+  }
+}
+
+/* 생성·수정 폼이 줄 안에 펼쳐질 때 */
+.adm-form {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+}
+
+.adm-grades {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+/* 배지: 알약 모양, 강조 틴트 (9-style.md §6) */
+.badge {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.badge--off,
+.badge--canceled {
+  background: var(--color-bg);
+  color: var(--color-text-subtle);
+}
+
+.badge--completed {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.search {
+  margin: var(--space-6) 0;
+}
+
+.search__row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.search__row .field__input {
+  max-width: 280px;
+}

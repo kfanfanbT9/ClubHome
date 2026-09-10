@@ -15,6 +15,7 @@
 | 0.7 | 2026-09-10 | §5 선택 키에 `CORS_ORIGIN` 추가(정확 일치·와일드카드 미지원·미설정 시 전부 차단). "CORS/HTTPS" 항목이 요구하던 환경변수의 실제 키 이름을 명시하고, Bearer 토큰 인증이므로 `Access-Control-Allow-Credentials`를 열지 않는다는 결정도 함께 기록 | Kang SangSoo |
 | 0.8 | 2026-09-10 | §8 문서 관리 원칙 신설: 문서 간 참조에 버전 번호를 쓰지 않기로 결정. 종전에는 §0 참조에 버전을 박아, 문서 하나를 고치면 그 문서를 가리키는 모든 문서의 표기와 버전이 연쇄로 올라갔다(선택 키 한 줄 추가에 문서 6개가 움직인 사례). 이 문서 §0의 참조에서도 버전 표기를 제거 | Kang SangSoo |
 | 0.9 | 2026-09-10 | 코드베이스 실측 결과 반영: §7 트리에 누락돼 있던 `middlewares/cors.js`·`utils/logger.js`·`tests/e2e-scenarios.sh` 추가. §5의 "로그는 콘솔 출력 수준으로 충분"을 실제 구현대로 **로깅** 항목으로 분리(네 지점, stdout/stderr 분리, 본문·인증 헤더 미기록 기준)하고, **헬스체크** 항목을 분리해 DB 실패 시 503 응답을 명시 | Kang SangSoo |
+| 0.18 | 2026-09-10 | FE-09 구현 반영. §6 트리에 `components/layout/RequireAdmin.tsx`와 `pages/admin/AdminHomePage.tsx` 추가. 관리자 훅은 이슈 FE-09 요구대로 `features/admin/useAdminQueries.ts` 한 파일에 모았다 — 관리자 화면끼리 서로의 캐시를 무효화하는 일이 많아 키와 무효화 규칙을 한눈에 봐야 한다. 원칙 본문 변경 없음. FE-01~FE-09로 프론트엔드 화면 전체가 구현됐다 | Kang SangSoo |
 | 0.17 | 2026-09-10 | FE-08 구현 반영. §6 트리에 `features/practiceRoom/reservationRules.ts`와 `components/common/ConfirmButton.tsx` 추가. 후자는 "같은 패턴이 3회 반복된 뒤에 공통화한다"는 단서보다 이르게(2회) 합친 경우다 — 삭제·취소 확인은 한쪽에만 빠지면 곧바로 사고가 되는 종류라 판단이 다르다. 원칙 본문 변경 없음 | Kang SangSoo |
 | 0.16 | 2026-09-10 | FE-07 구현 반영. §6 트리에 `features/practiceRoom/slotSelection.ts` 추가. 도메인 규칙 중 화면과 떼어낼 수 있는 것은 순수 함수로 두어 경우별로 검증한다는 사례다(연속 슬롯 선택). 원칙 본문 변경 없음 | Kang SangSoo |
 | 0.15 | 2026-09-10 | FE-05 구현 반영. §6 트리의 `useBoardQueries.ts` 설명을 실제 내용으로 채웠다. 원칙 본문 변경 없음 | Kang SangSoo |
@@ -150,6 +151,7 @@ frontend/
 │   │   │   ├── Layout.tsx        # Header + Outlet, 모든 화면의 부모 라우트
 │   │   │   ├── Header.tsx        # 상단 네비게이션, 햄버거 펼침 상태
 │   │   │   ├── NavMenu.tsx       # 메뉴 링크 목록 (props만 받는 UI 조각)
+│   │   │   ├── RequireAdmin.tsx  # 관리자 전용 경로를 감싸는 부모 라우트
 │   │   │   └── RequireAuth.tsx   # 로그인 필요 경로를 감싸는 부모 라우트
 │   │   └── common/
 │   │       ├── ConfirmButton.tsx # 한 번 더 묻고 실행하는 버튼
