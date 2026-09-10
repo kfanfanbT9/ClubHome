@@ -1,0 +1,25 @@
+# Task ID -> 이슈 URL (생성 시각: 2026-09-09 16:41:22)
+BE-01 https://github.com/kfanfanbT9/ClubHome/issues/3
+BE-02 https://github.com/kfanfanbT9/ClubHome/issues/4
+BE-03 https://github.com/kfanfanbT9/ClubHome/issues/5
+BE-04 https://github.com/kfanfanbT9/ClubHome/issues/14
+BE-05 https://github.com/kfanfanbT9/ClubHome/issues/7
+BE-06 https://github.com/kfanfanbT9/ClubHome/issues/8
+BE-07 https://github.com/kfanfanbT9/ClubHome/issues/9
+BE-08 https://github.com/kfanfanbT9/ClubHome/issues/12
+BE-09 https://github.com/kfanfanbT9/ClubHome/issues/13
+BE-10 https://github.com/kfanfanbT9/ClubHome/issues/17
+BE-11 https://github.com/kfanfanbT9/ClubHome/issues/22
+DB-01 https://github.com/kfanfanbT9/ClubHome/issues/1
+DB-02 https://github.com/kfanfanbT9/ClubHome/issues/2
+FE-01 https://github.com/kfanfanbT9/ClubHome/issues/6
+FE-02 https://github.com/kfanfanbT9/ClubHome/issues/10
+FE-03 https://github.com/kfanfanbT9/ClubHome/issues/11
+FE-04 https://github.com/kfanfanbT9/ClubHome/issues/21
+FE-05 https://github.com/kfanfanbT9/ClubHome/issues/15
+FE-06 https://github.com/kfanfanbT9/ClubHome/issues/18
+FE-07 https://github.com/kfanfanbT9/ClubHome/issues/16
+FE-08 https://github.com/kfanfanbT9/ClubHome/issues/19
+FE-09 https://github.com/kfanfanbT9/ClubHome/issues/20
+IT-01 https://github.com/kfanfanbT9/ClubHome/issues/23
+IT-02 https://github.com/kfanfanbT9/ClubHome/issues/24
