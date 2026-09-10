@@ -710,3 +710,129 @@ a.button {
   display: inline-flex;
   align-items: center;
 }
+
+/* ============================================================
+   연습실 예약현황 (화면 9)
+   ============================================================ */
+.picker {
+  display: grid;
+  gap: var(--space-4);
+  margin: var(--space-6) 0;
+}
+
+.picker__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+@media (min-width: 768px) {
+  .picker {
+    grid-template-columns: repeat(2, minmax(0, 240px));
+  }
+}
+
+.slot-list {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+/* 예약가능 = 흰 배경 + 테두리 (9-style.md §6 예약 슬롯) */
+.slot {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.slot__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+}
+
+.slot__time {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-medium);
+}
+
+.slot__state {
+  margin-left: auto;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* 선택 = 강조 틴트 + 강조색 테두리 */
+.slot--picked {
+  background: var(--color-accent-tint);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.slot--picked .slot__state {
+  color: var(--color-accent);
+}
+
+/* 불가 = 페이지 배경 + 흐린 글자 + 예약자명 */
+.slot--taken {
+  background: var(--color-bg);
+}
+
+.slot--taken .slot__label {
+  cursor: default;
+}
+
+.slot--taken .slot__time,
+.slot--taken .slot__state {
+  color: var(--color-text-subtle);
+}
+
+/* ============================================================
+   선택 요약 — 모바일에서는 화면 하단에 붙인다(와이어프레임 9번)
+   ============================================================ */
+.summary {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.summary__text {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+@media (min-width: 768px) {
+  .summary {
+    position: static;
+  }
+}
+
+/* ============================================================
+   예약 신청 확인 (화면 10)
+   ============================================================ */
+.confirm-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-6) 0 0;
+}
+
+.confirm-list dt {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.confirm-list dd {
+  margin: 0;
+}

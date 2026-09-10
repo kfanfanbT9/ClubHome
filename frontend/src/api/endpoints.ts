@@ -16,4 +16,6 @@ export const endpoints = {
   boards: '/api/boards',
   boardPosts: (boardId: number) => `/api/boards/${boardId}/posts`,
   post: (postId: number) => `/api/posts/${postId}`,
+  practiceRooms: '/api/practice-rooms',
+  roomReservations: (roomId: number) => `/api/practice-rooms/${roomId}/reservations`,
 } as const;

@@ -15,6 +15,7 @@
 | 0.7 | 2026-09-10 | §5 선택 키에 `CORS_ORIGIN` 추가(정확 일치·와일드카드 미지원·미설정 시 전부 차단). "CORS/HTTPS" 항목이 요구하던 환경변수의 실제 키 이름을 명시하고, Bearer 토큰 인증이므로 `Access-Control-Allow-Credentials`를 열지 않는다는 결정도 함께 기록 | Kang SangSoo |
 | 0.8 | 2026-09-10 | §8 문서 관리 원칙 신설: 문서 간 참조에 버전 번호를 쓰지 않기로 결정. 종전에는 §0 참조에 버전을 박아, 문서 하나를 고치면 그 문서를 가리키는 모든 문서의 표기와 버전이 연쇄로 올라갔다(선택 키 한 줄 추가에 문서 6개가 움직인 사례). 이 문서 §0의 참조에서도 버전 표기를 제거 | Kang SangSoo |
 | 0.9 | 2026-09-10 | 코드베이스 실측 결과 반영: §7 트리에 누락돼 있던 `middlewares/cors.js`·`utils/logger.js`·`tests/e2e-scenarios.sh` 추가. §5의 "로그는 콘솔 출력 수준으로 충분"을 실제 구현대로 **로깅** 항목으로 분리(네 지점, stdout/stderr 분리, 본문·인증 헤더 미기록 기준)하고, **헬스체크** 항목을 분리해 DB 실패 시 503 응답을 명시 | Kang SangSoo |
+| 0.16 | 2026-09-10 | FE-07 구현 반영. §6 트리에 `features/practiceRoom/slotSelection.ts` 추가. 도메인 규칙 중 화면과 떼어낼 수 있는 것은 순수 함수로 두어 경우별로 검증한다는 사례다(연속 슬롯 선택). 원칙 본문 변경 없음 | Kang SangSoo |
 | 0.15 | 2026-09-10 | FE-05 구현 반영. §6 트리의 `useBoardQueries.ts` 설명을 실제 내용으로 채웠다. 원칙 본문 변경 없음 | Kang SangSoo |
 | 0.14 | 2026-09-10 | FE-04 구현 반영. §6 트리에 `components/common/ReadOnlyField.tsx`와 `lib/format.ts` 추가. 쿼리 키를 각 `features/*/use*Queries.ts`에 모아 두는 관례(문자열을 화면에 흩뿌리면 invalidate가 오타로 빗나간다)도 함께 시작했다. 원칙 본문 변경 없음 | Kang SangSoo |
 | 0.13 | 2026-09-10 | FE-03 구현 반영. §6 트리에 `components/layout/RequireAuth.tsx`, `components/common/Field.tsx`, `lib/validation.ts` 추가. `components/common/`은 "같은 패턴이 3회 반복된 뒤에 만든다"는 단서를 지켜 첫 입주자가 생긴 경우다 — 라벨+입력창+오류 한 벌이 가입·로그인 폼에서 일곱 번 반복됐다. 원칙 본문 변경 없음 | Kang SangSoo |
@@ -161,6 +162,7 @@ frontend/
 │   │   ├── board/
 │   │   │   └── useBoardQueries.ts   # 게시판 목록·게시글 목록 + 쿼리 키
 │   │   ├── practiceRoom/
+│   │   │   ├── slotSelection.ts     # 연속 슬롯 선택 규칙 (순수 함수)
 │   │   │   └── useReservationQueries.ts
 │   │   └── admin/
 │   │       └── useAdminQueries.ts

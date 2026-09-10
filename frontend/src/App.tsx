@@ -9,6 +9,8 @@ import NotReadyPage from './pages/NotReadyPage';
 import PostDetailPage from './pages/PostDetailPage';
 import PostFormPage from './pages/PostFormPage';
 import PostListPage from './pages/PostListPage';
+import PracticeRoomPage from './pages/PracticeRoomPage';
+import ReservationConfirmPage from './pages/ReservationConfirmPage';
 import SignupPage from './pages/SignupPage';
 
 /**
@@ -34,7 +36,9 @@ export default function App() {
           <Route path="/boards/:boardId/posts/new" element={<PostFormPage />} />
           <Route path="/posts/:postId" element={<PostDetailPage />} />
           <Route path="/posts/:postId/edit" element={<PostFormPage />} />
-          <Route path="/practice-rooms" element={<NotReadyPage />} />
+          <Route path="/practice-rooms" element={<PracticeRoomPage />} />
+          <Route path="/practice-rooms/:roomId/reserve" element={<ReservationConfirmPage />} />
+          <Route path="/me/reservations" element={<NotReadyPage />} />
           <Route path="/me" element={<MyPage />} />
           <Route path="/admin" element={<NotReadyPage />} />
         </Route>

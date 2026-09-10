@@ -24,3 +24,9 @@ export function formatMonthDay(iso: string): string {
   if (Number.isNaN(날짜.getTime())) return iso;
   return `${두자리(날짜.getMonth() + 1)}-${두자리(날짜.getDate())}`;
 }
+
+/** 오늘 날짜를 `YYYY-MM-DD`로. 예약 화면의 기본 날짜에 쓴다. */
+export function todayISODate(): string {
+  const 지금 = new Date();
+  return `${지금.getFullYear()}-${두자리(지금.getMonth() + 1)}-${두자리(지금.getDate())}`;
+}
