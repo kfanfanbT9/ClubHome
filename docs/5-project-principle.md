@@ -15,6 +15,7 @@
 | 0.7 | 2026-09-10 | §5 선택 키에 `CORS_ORIGIN` 추가(정확 일치·와일드카드 미지원·미설정 시 전부 차단). "CORS/HTTPS" 항목이 요구하던 환경변수의 실제 키 이름을 명시하고, Bearer 토큰 인증이므로 `Access-Control-Allow-Credentials`를 열지 않는다는 결정도 함께 기록 | Kang SangSoo |
 | 0.8 | 2026-09-10 | §8 문서 관리 원칙 신설: 문서 간 참조에 버전 번호를 쓰지 않기로 결정. 종전에는 §0 참조에 버전을 박아, 문서 하나를 고치면 그 문서를 가리키는 모든 문서의 표기와 버전이 연쇄로 올라갔다(선택 키 한 줄 추가에 문서 6개가 움직인 사례). 이 문서 §0의 참조에서도 버전 표기를 제거 | Kang SangSoo |
 | 0.9 | 2026-09-10 | 코드베이스 실측 결과 반영: §7 트리에 누락돼 있던 `middlewares/cors.js`·`utils/logger.js`·`tests/e2e-scenarios.sh` 추가. §5의 "로그는 콘솔 출력 수준으로 충분"을 실제 구현대로 **로깅** 항목으로 분리(네 지점, stdout/stderr 분리, 본문·인증 헤더 미기록 기준)하고, **헬스체크** 항목을 분리해 DB 실패 시 503 응답을 명시 | Kang SangSoo |
+| 0.12 | 2026-09-10 | FE-02 구현 반영. §6의 "스타일은 `styles/tokens.css` 파일 하나로 끝낸다"를 **`styles/` 아래 두 파일**(`tokens.css` 값 + `app.css` 적용)로 고쳤다 — 인라인 `style` 속성으로는 미디어쿼리와 `:hover`를 쓸 수 없어, 반응형 전환(768px)과 hover가 요구사항에 있는 이상 일반 CSS 파일이 반드시 필요했다. 값과 사용처를 나눠 두면 값을 고칠 때와 화면을 고칠 때 건드릴 파일이 섞이지 않는다. 파일을 더 늘리지 않고 화면이 늘어도 `app.css`에 절을 추가한다는 단서도 함께 명시. §6 트리에 `components/layout/`의 실제 파일 3개 추가 | Kang SangSoo |
 | 0.11 | 2026-09-10 | FE-01 착수 결정 반영. §4에서 "테스트 러너는 `node --test` 하나만 쓴다 … 별도 프레임워크를 추가하지 않는다"를 **스택별로 하나씩**으로 고쳤다 — Node 내장 러너에는 DOM과 컴포넌트 렌더링 수단이 없어 프론트엔드 로직을 검증할 방법이 없었고, 그 결과 이 조항이 "프론트는 테스트하지 않는다"와 같은 뜻이 되어 있었다. 프론트엔드는 Vitest + React Testing Library를 쓰고 `src/` 커버리지 80%를 `vite.config.ts`의 `coverage.thresholds`로 강제한다. 자동화 대상도 "UI 세부 스타일 제외"에서 "눈으로 보기 어려운 로직(토큰 재발급·슬롯 판정·권한별 노출·오류 매핑)"으로 구체화했다. 함께 발견한 오류 정정: §4가 "E2E는 범위 외"라고 단정하고 있었으나 `backend/tests/e2e-scenarios.sh`가 이미 S-01~S-08을 자동화하고 있어, API E2E는 있고 브라우저 UI E2E만 범위 외임을 명시했다. §6 트리에 `lib/queryClient.ts`·`tests/`·`vite.config.ts`·`.env.example`을 추가하고 `client.ts` 설명의 "axios/fetch"를 실제 구현대로 fetch로 정정 | Kang SangSoo |
 | 0.10 | 2026-09-10 | §6 프론트엔드 구조에 `styles/tokens.css` 추가. 스타일 가이드(`9-style.md`)가 토큰 파일 하나를 전제하는데 이 문서의 트리에 그 자리가 없어, FE-01 착수 시 놓일 위치가 불명확했다. 스타일을 파일 하나로 끝내는 원칙(CSS 변수, CSS-in-JS·Tailwind 미도입)과 `components/common/`을 미리 채우지 않는다는 단서도 함께 명시 | Kang SangSoo |
 
@@ -140,7 +141,10 @@ frontend/
 │   │       ├── BoardAdminPage.tsx
 │   │       └── PracticeRoomAdminPage.tsx
 │   ├── components/              # 여러 페이지에서 재사용하는 UI 조각
-│   │   ├── layout/              # Header, Nav 등
+│   │   ├── layout/
+│   │   │   ├── Layout.tsx        # Header + Outlet, 모든 화면의 부모 라우트
+│   │   │   ├── Header.tsx        # 상단 네비게이션, 햄버거 펼침 상태
+│   │   │   └── NavMenu.tsx       # 메뉴 링크 목록 (props만 받는 UI 조각)
 │   │   └── common/               # Button, Modal, Table 등
 │   ├── features/                 # 도메인 단위 폴더 (API 훅 + 타입 + 스토어)
 │   │   ├── auth/
@@ -158,7 +162,8 @@ frontend/
 │   │   ├── client.ts             # fetch 래퍼, 인증 헤더 주입 + 토큰 재발급 인터셉터
 │   │   └── endpoints.ts          # API 경로 상수
 │   ├── styles/
-│   │   └── tokens.css            # 색상·타이포·간격 CSS 변수 (스타일 가이드 §3~§5)
+│   │   ├── tokens.css            # 색상·타이포·간격 CSS 변수 (스타일 가이드 §3~§5)
+│   │   └── app.css               # 그 변수를 쓰는 컴포넌트 스타일 (스타일 가이드 §6)
 │   ├── types/                     # 도메인 타입 (Member, Board, Post, PracticeRoom, Reservation)
 │   └── lib/                       # 날짜 포맷 등 순수 유틸
 │       └── queryClient.ts        # QueryClient 생성 + 재시도 정책
@@ -173,7 +178,9 @@ frontend/
 - 테스트는 `src/` 옆에 흩지 않고 `tests/` 한 곳에 모은다 — `backend/tests/`와 같은 배치라 저장소 안에서 테스트를 찾는 방법이 스택마다 달라지지 않는다.
 - `api/endpoints.ts`에는 **지금 화면이 부르는 경로만** 둔다. swagger의 24개 경로를 미리 옮겨 적지 않고, 화면을 추가하는 이슈에서 그 화면이 쓰는 경로를 함께 넣는다(§1 YAGNI).
 - `features/*`는 "도메인당 하나의 폴더"만 유지하고, 그 안을 다시 세분화(entities/, hooks/, model/ 등)하지 않는다.
-- **스타일은 `styles/tokens.css` 파일 하나로 끝낸다.** `main.tsx`에서 한 번 import하고 각 컴포넌트는 `var(--...)`로 참조한다. 토큰 값과 화면별 적용 규칙은 스타일 가이드(`9-style.md`)가 정의하며, 이 문서는 그 파일이 놓이는 자리만 규정한다.
+- **스타일은 `styles/` 아래 두 파일로 끝낸다** — `tokens.css`(값의 단일 출처)와 `app.css`(그 값을 쓰는 컴포넌트 스타일). `main.tsx`에서 순서대로 한 번 import하고, 컴포넌트는 색·크기·간격을 직접 쓰지 않고 `var(--...)`로만 참조한다. 토큰 값과 화면별 적용 규칙은 스타일 가이드(`9-style.md`)가 정의하며, 이 문서는 그 파일이 놓이는 자리만 규정한다.
+  - 컴포넌트 스타일을 인라인 `style` 속성으로 두지 않는 이유는 인라인으로는 미디어쿼리와 `:hover`를 쓸 수 없기 때문이다. 반응형 전환(768px)과 hover 상태가 화면 요구사항에 들어 있으므로 일반 CSS 파일이 필요하다.
+  - 파일을 더 늘리지 않는다. 화면이 늘어도 `app.css`에 절을 추가하는 쪽을 택한다 — 14개 화면 규모에서 파일을 쪼개면 어떤 클래스가 어디 있는지 찾는 비용이 더 크다.
   - CSS-in-JS, Tailwind, 별도 테마 프로바이더를 도입하지 않는다(PRD §7 "디자인 시스템/컴포넌트 라이브러리 신규 구축 없이"). 토큰을 CSS 변수로 두면 런타임 의존성이 0이고, 다크 모드 같은 요구가 생겨도 `:root` 재정의로 확장할 수 있다.
   - `components/common/`에 Button·Modal·Table을 **미리 만들지 않는다.** 같은 패턴이 3회 반복된 뒤에 공통화한다(§1 조기 추상화 금지). 위 트리의 해당 항목은 그때 만들 자리를 표시한 것이다.
 
