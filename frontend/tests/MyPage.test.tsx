@@ -176,3 +176,67 @@ describe('저장', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
+
+describe('리뷰에서 발견한 문제', () => {
+  it('저장 중에 입력해도 저장 결과가 사라지지 않는다', async () => {
+    let patch완료: (r: Response) => void = () => {};
+    let get횟수 = 0;
+    fetchMock.mockImplementation((_url: string, init: RequestInit) => {
+      if (init?.method === 'PATCH') {
+        // 응답을 붙잡아 두고 그 사이에 입력이 들어오는 상황을 만든다.
+        return new Promise<Response>((resolve) => {
+          patch완료 = resolve;
+        });
+      }
+      get횟수 += 1;
+      return Promise.resolve(응답(200, 회원));
+    });
+    renderWithProviders(<MyPage />);
+    await screen.findByDisplayValue('홍길동');
+
+    입력하기('이름', '홍길순');
+    저장();
+
+    // PATCH가 실제로 나가기를 기다린다. 저장() 직후에는 아직 fetch가 불리지 않아
+    // patch완료가 no-op이다.
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([, init]) => (init as RequestInit)?.method === 'PATCH'),
+      ).toBe(true),
+    );
+
+    // 저장이 끝나기 전에 계속 타이핑한다 — 입력칸은 비활성이 아니다.
+    입력하기('연락처', '010-5555-6666');
+    patch완료(응답(200, { ...회원, name: '홍길순' }));
+
+    // reset이 진행 중인 mutation을 지워버리면 안내도 재조회도 사라진다.
+    expect(await screen.findByRole('status')).toHaveTextContent('저장했습니다.');
+    await waitFor(() => expect(get횟수).toBe(2));
+  });
+
+  it('이름이 50자를 넘으면 보내지 않는다', async () => {
+    fetchMock.mockImplementation(항상응답(200, 회원));
+    renderWithProviders(<MyPage />);
+    await screen.findByDisplayValue('홍길동');
+
+    // swagger MemberUpdateRequest.name.maxLength 와 같은 기준이다.
+    입력하기('이름', '가'.repeat(51));
+    저장();
+
+    expect(screen.getByText('이름은 50자를 넘을 수 없습니다.')).toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some(([, init]) => (init as RequestInit)?.method === 'PATCH'),
+    ).toBe(false);
+  });
+
+  it('연락처가 20자를 넘으면 보내지 않는다', async () => {
+    fetchMock.mockImplementation(항상응답(200, 회원));
+    renderWithProviders(<MyPage />);
+    await screen.findByDisplayValue('홍길동');
+
+    입력하기('연락처', '0'.repeat(21));
+    저장();
+
+    expect(screen.getByText('연락처는 20자를 넘을 수 없습니다.')).toBeInTheDocument();
+  });
+});

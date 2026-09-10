@@ -8,10 +8,21 @@ import type { Member } from '../types';
 type 입력 = { name: string; phone: string };
 type 오류목록 = Partial<Record<keyof 입력, string>>;
 
+/** swagger `MemberUpdateRequest`의 maxLength와 같은 값 */
+const 이름최대 = 50;
+const 연락처최대 = 20;
+
 function 검증(값: 입력): 오류목록 {
   const 오류: 오류목록 = {};
+
   if (!값.name.trim()) 오류.name = '이름을 입력하세요.';
+  else if (값.name.length > 이름최대) 오류.name = `이름은 ${이름최대}자를 넘을 수 없습니다.`;
+
   if (!값.phone.trim()) 오류.phone = '연락처를 입력하세요.';
+  else if (값.phone.length > 연락처최대) {
+    오류.phone = `연락처는 ${연락처최대}자를 넘을 수 없습니다.`;
+  }
+
   return 오류;
 }
 
@@ -29,8 +40,13 @@ function 내정보폼({ member }: { member: Member }) {
     const 값하나 = event.target.value;
     set값((이전) => ({ ...이전, [키]: 값하나 }));
     set오류((이전) => ({ ...이전, [키]: undefined }));
-    // 입력이 바뀌면 직전 저장 결과(성공·실패 모두)는 더 이상 이 입력에 대한 것이 아니다.
-    if (!update.isIdle) update.reset();
+    /**
+     * 입력이 바뀌면 직전 저장 결과(성공·실패 모두)는 더 이상 이 입력에 대한 것이 아니다.
+     * 다만 **끝난 결과만** 지운다 — isIdle이 false인 상태에는 "저장 중"도 포함되므로
+     * `!isIdle`로 걸면 저장 중에 타이핑한 순간 진행 중인 mutation이 지워지고,
+     * 성공 안내와 캐시 무효화가 통째로 사라진다. 입력칸은 비활성이 아니라 밟히는 경로다.
+     */
+    if (update.isSuccess || update.isError) update.reset();
   };
 
   const 제출 = (event: FormEvent) => {
