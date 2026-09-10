@@ -12,6 +12,12 @@ export const roomKeys = {
   slots: (roomId: number, date: string) => ['practiceRooms', roomId, 'slots', date] as const,
 };
 
+export const reservationKeys = {
+  /** 필터와 무관하게 내 예약 전체 — 취소하면 어느 필터로 보고 있든 달라진다. */
+  mine: ['reservations', 'mine'] as const,
+  mineBy: (roomId?: number) => ['reservations', 'mine', { roomId }] as const,
+};
+
 /** 서버가 활성 연습실만 내려준다. */
 export function usePracticeRooms() {
   return useQuery({
@@ -65,6 +71,38 @@ export function useCreateReservation(roomId: number) {
      */
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: roomKeys.slotsOf(roomId) });
+    },
+  });
+}
+
+/**
+ * 내 예약 내역.
+ *
+ * 필터는 서버 쿼리 파라미터로 처리하고 "전체"는 파라미터를 아예 붙이지 않는다 —
+ * 전체 목록을 받아 프론트에서 걸러내지 않는다(PRD F-22).
+ */
+export function useMyReservations(roomId?: number) {
+  return useQuery({
+    queryKey: reservationKeys.mineBy(roomId),
+    queryFn: () => api.get<Reservation[]>(endpoints.myReservations, { query: { roomId } }),
+  });
+}
+
+export function useCancelReservation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    /** 예약 객체를 받는 이유: 취소 후 무효화할 연습실을 알아야 한다. */
+    mutationFn: (reservation: Reservation) =>
+      api.patch<Reservation>(endpoints.cancelReservation(reservation.id)),
+    onSuccess: (_결과, reservation) => {
+      queryClient.invalidateQueries({ queryKey: reservationKeys.mine });
+      /**
+       * 그 연습실의 예약현황도 함께 무효화한다.
+       * "취소한 시간대가 예약현황에서 다시 예약가능으로 표시된다"가 완료조건이므로,
+       * 내 목록만 갱신하면 조건을 절반만 만족한다.
+       */
+      queryClient.invalidateQueries({ queryKey: roomKeys.slotsOf(reservation.practiceRoomId) });
     },
   });
 }
