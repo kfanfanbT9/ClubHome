@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 /**
  * 아직 만들지 않은 화면 자리.
@@ -10,9 +10,14 @@ import { Link } from 'react-router-dom';
  * 잘못된 URL 안내로만 남는다.
  */
 export default function NotReadyPage() {
+  const location = useLocation();
+
   return (
     <main className="page">
       <h1 className="page__title">준비 중인 화면입니다</h1>
+      <p className="page__note">
+        요청한 경로: <code>{`${location.pathname}${location.search}`}</code>
+      </p>
       <p className="page__note">
         아직 만들지 않은 화면이에요.{' '}
         <Link className="link" to="/">

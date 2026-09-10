@@ -255,3 +255,109 @@ a {
   margin: var(--space-3) 0 0;
   color: var(--color-text-muted);
 }
+
+/* 폼 위주 화면은 PC에서도 1열을 유지하고 폭만 좁혀 가운데 둔다(9-style.md §5) */
+@media (min-width: 768px) {
+  .page--form {
+    max-width: 480px;
+  }
+}
+
+/* ============================================================
+   폼 — 9-style.md §6 입력창·버튼·오류 메시지 규칙
+   ============================================================ */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.field__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.field__input {
+  height: 40px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-base);
+}
+
+.field__input:focus {
+  border-color: var(--color-accent);
+}
+
+/* 오류가 난 칸은 테두리로도 표시한다. 아래 문구만으로는 어느 칸인지 눈이 헤맨다. */
+.field__input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+/* 입력창 바로 아래, --text-sm, --color-danger (9-style.md §6) */
+.field__error {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+
+.notice {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.notice--error {
+  background: var(--color-surface);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.notice--success {
+  background: var(--color-surface);
+  border: 1px solid var(--color-success);
+  color: var(--color-success);
+}
+
+/* 주요 버튼: 높이 40px, 강조색 배경, 흰 글자 (9-style.md §6) */
+.button {
+  height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.button--primary {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.button--primary:hover:not(:disabled) {
+  background: var(--color-accent-strong);
+}
+
+.form__footer {
+  margin: var(--space-6) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}

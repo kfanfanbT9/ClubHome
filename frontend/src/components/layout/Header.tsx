@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { selectIsAuthenticated, useAuthStore } from '../../features/auth/authStore';
+import { useLogout } from '../../features/auth/useAuth';
 import NavMenu, { type NavItem } from './NavMenu';
 
 const 기본메뉴: NavItem[] = [
@@ -22,7 +23,7 @@ const 관리자메뉴: NavItem = { label: '관리자', to: '/admin', isAdmin: tr
 export default function Header() {
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const isAdmin = useAuthStore((state) => state.isAdmin);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const logout = useLogout();
   const navigate = useNavigate();
   const [열림, set열림] = useState(false);
 
@@ -32,14 +33,13 @@ export default function Header() {
 
   const 로그아웃 = () => {
     닫기();
-    // 서버에 토큰 저장소가 없으므로 실제 폐기는 클라이언트 토큰 삭제다(PRD F-02, ERD §4).
-    // 확인 응답용 POST /api/auth/logout 호출은 FE-03에서 붙인다.
-    clearAuth();
-    navigate('/');
+    // 토큰 폐기와 캐시 비우기는 useLogout이 onSettled에서 한다 — 확인 응답용 204가
+    // 실패해도 로그아웃은 진행된다. 여기서는 이동만 책임진다.
+    logout.mutate(undefined, { onSettled: () => navigate('/') });
   };
 
   const 인증항목 = isAuthenticated ? (
-    <button type="button" className="nav__link" onClick={로그아웃}>
+    <button type="button" className="nav__link" onClick={로그아웃} disabled={logout.isPending}>
       로그아웃
     </button>
   ) : (
