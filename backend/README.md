@@ -88,7 +88,7 @@ curl -f http://localhost:3000/health    # 200 {"status":"ok","db":"ok"}
 
 JWT Secret이 없으면 서버가 기동하지 않고 즉시 실패합니다(`환경변수 JWT_ACCESS_SECRET 미설정`). 하드코딩 기본값을 두지 않았기 때문입니다 — 값을 잊은 채로 뜨는 것보다 못 뜨는 편이 안전합니다.
 
-### 배포 형태 두 가지
+### 배포 형태 세 가지
 
 **(가) 단일 출처 — 권장.** `STATIC_DIR`을 프론트 빌드 결과로 지정하면 Express가 정적 파일과 API를 함께 내보냅니다. 프론트와 API가 같은 출처이므로 **CORS 설정이 아예 필요 없습니다.** 정적 서버를 하나 더 두지 않는다는 점에서 "단일 서버" 원칙에 맞습니다.
 
@@ -110,9 +110,31 @@ VITE_API_BASE_URL=https://api.clubhome.example.com npm run build
 CORS_ORIGIN=https://clubhome.example.com
 ```
 
+**(다) 서버리스 + 관리형 DB (현재 운영 형태).** 프론트와 백엔드를 Vercel에 각각 배포하고 DB는 Supabase를 씁니다. (나)의 변형이지만 서버를 직접 띄우지 않으므로 아래가 달라집니다.
+
+```bash
+# 프론트 Vercel 프로젝트 — 빌드 시 주입
+VITE_API_BASE_URL=https://<백엔드>.vercel.app
+# 백엔드 Vercel 프로젝트 — 프론트 출처를 허용 목록에 넣는다
+CORS_ORIGIN=https://<프론트>.vercel.app
+DATABASE_URL=postgresql://<사용자>:<비밀번호>@<프로젝트>.pooler.supabase.com:6543/postgres
+```
+
+이 형태에서 실제로 걸렸던 지점들입니다.
+
+- **환경변수는 `.env` 파일이 아니라 Vercel 프로젝트 설정에서 읽힙니다.** 저장소의 `.env*`는 배포본에 올라가지 않습니다(gitignore). 값을 고쳤으면 **재배포해야** 반영됩니다.
+- **SPA 폴백을 호스팅 쪽에 설정해야 합니다.** (가)에서는 Express가 하던 일입니다. 없으면 `/` 외의 모든 주소가 404가 되어 북마크·새로고침·링크 공유가 전부 깨집니다. `frontend/vercel.json`에 아래를 둡니다. 이 파일은 Vercel 프로젝트의 **Root Directory 기준**으로 읽히므로, Root Directory가 저장소 루트라면 파일도 루트에 두어야 합니다.
+  ```json
+  { "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }
+  ```
+- **DB 이름을 정확히 적습니다.** Supabase 기본 DB는 `postgres`입니다. 한 글자만 틀려도(`postgress`) 연결·인증은 통과하고 `/health`가 503으로 떨어집니다 — 로그에 `database "..." does not exist`가 남습니다.
+- 포트 **6543은 트랜잭션 모드 풀러**입니다. 서버리스에는 이쪽이 맞습니다(요청마다 커넥션이 늘어나는 것을 막아줍니다). 5432 직결은 함수 인스턴스가 늘면 커넥션이 고갈됩니다.
+- **`docs/seed-dev.sql`을 적용하지 않습니다.** 개발 계정 4개의 비밀번호가 저장소에 평문으로 적혀 있어, 적용하면 누구나 관리자로 로그인할 수 있습니다. 운영에는 `docs/schema.sql`만 적용하고 관리자 계정은 따로 만듭니다.
+- **`ENABLE_API_DOCS`는 비워 둡니다.** `/api-docs`가 404인지 배포 후 확인하세요 — 이 경로에는 인증이 없습니다.
+
 **`VITE_API_BASE_URL`은 빌드 시점에 결과물에 박힙니다.** 런타임에 바꿀 수 없으므로, API 주소가 달라지면 프론트를 다시 빌드해야 합니다. 반대로 (가)에서 이 값을 비우지 않으면 빌드된 프론트가 개발용 주소(`http://localhost:3000`)를 계속 호출합니다 — 배포에서 가장 걸리기 쉬운 지점입니다.
 
-운영은 HTTPS로만 서비스합니다(원칙 §5). TLS 종료는 리버스 프록시나 호스팅 계층에서 처리하며, 이 서버는 평문 HTTP로 그 뒤에 둡니다.
+운영은 HTTPS로만 서비스합니다(원칙 §5). (가)·(나)에서 TLS 종료는 리버스 프록시나 호스팅 계층이 처리하며 이 서버는 평문 HTTP로 그 뒤에 둡니다. (다)는 플랫폼이 HTTPS를 제공합니다.
 
 ### 기동 확인과 무중단
 
