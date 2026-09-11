@@ -110,7 +110,7 @@ VITE_API_BASE_URL=https://api.clubhome.example.com npm run build
 CORS_ORIGIN=https://clubhome.example.com
 ```
 
-**`VITE_API_BASE_URL`은 빌드 시점에 결과물에 박힙니다.** 런타임에 바꿀 수 없으므로, API 주소가 달라지면 프론트를 다시 빌드해야 합니다. 반대로 (가)에서 이 값을 비우지 않으면 빌드된 프론트가 개발용 주소(`http://localhost:3001`)를 계속 호출합니다 — 배포에서 가장 걸리기 쉬운 지점입니다.
+**`VITE_API_BASE_URL`은 빌드 시점에 결과물에 박힙니다.** 런타임에 바꿀 수 없으므로, API 주소가 달라지면 프론트를 다시 빌드해야 합니다. 반대로 (가)에서 이 값을 비우지 않으면 빌드된 프론트가 개발용 주소(`http://localhost:3000`)를 계속 호출합니다 — 배포에서 가장 걸리기 쉬운 지점입니다.
 
 운영은 HTTPS로만 서비스합니다(원칙 §5). TLS 종료는 리버스 프록시나 호스팅 계층에서 처리하며, 이 서버는 평문 HTTP로 그 뒤에 둡니다.
 
