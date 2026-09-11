@@ -141,3 +141,8 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Playwright E2E 실행 부산물 (리포트와 스크린샷은 남긴다)
+test/e2e/test-results/
+test/e2e/results.json
+test/e2e/*/shots.jsonl
