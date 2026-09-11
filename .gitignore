@@ -142,7 +142,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
-# Playwright E2E 실행 부산물 (리포트와 스크린샷은 남긴다)
-test/e2e/test-results/
-test/e2e/results.json
-test/e2e/*/shots.jsonl
+# E2E 테스트(Playwright)는 버전 제어하지 않는다.
+# 스펙·설정·리포트·스크린샷이 모두 여기 있으며, 대상이 개발서버라 결과가 실행 환경에
+# 따라 달라진다. 저장소에는 두지 않고 각자 로컬에서 돌린다.
+test/
